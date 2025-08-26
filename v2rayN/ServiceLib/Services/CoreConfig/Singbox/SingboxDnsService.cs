@@ -13,8 +13,14 @@ public partial class CoreConfigSingboxService
             }
 
             var simpleDNSItem = _config.SimpleDNSItem;
+
+            // Check for sanctions bypass and transparent mirroring
+            var sanctionsBypassService = new SanctionsBypassService();
+            var transparentMirrorService = new TransparentMirrorService();
+            var shouldUseBypass = await sanctionsBypassService.ShouldUseSanctionsBypassAsync();
+
             await GenDnsServers(singboxConfig, simpleDNSItem);
-            await GenDnsRules(singboxConfig, simpleDNSItem);
+            await GenDnsRules(singboxConfig, simpleDNSItem, shouldUseBypass);
 
             singboxConfig.dns ??= new Dns4Sbox();
             singboxConfig.dns.independent_cache = true;
@@ -192,7 +198,7 @@ public partial class CoreConfigSingboxService
         return await Task.FromResult(finalDns);
     }
 
-    private async Task<int> GenDnsRules(SingboxConfig singboxConfig, SimpleDNSItem simpleDNSItem)
+    private async Task<int> GenDnsRules(SingboxConfig singboxConfig, SimpleDNSItem simpleDNSItem, bool shouldUseBypass)
     {
         singboxConfig.dns ??= new Dns4Sbox();
         singboxConfig.dns.rules ??= new List<Rule4Sbox>();
@@ -239,10 +245,9 @@ public partial class CoreConfigSingboxService
 
             singboxConfig.dns.rules.Insert(0, new Rule4Sbox
             {
-                domain = googleDomains,
+                domain = googleDomains.ToList(),
                 server = "shecan-primary", // Primary Iranian DNS for Google domains
-                disable_cache = false,
-                fallback_server = "radar-primary" // Fallback to another Iranian DNS
+                disable_cache = false
             });
         }
 

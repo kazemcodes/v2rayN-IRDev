@@ -2,10 +2,11 @@ using ServiceLib.Services.CoreConfig;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Collections.Generic;
 
-namespace ServiceLib.Views;
+namespace v2rayN.Views;
 
 public partial class SanctionsBypassWindow : Window
 {

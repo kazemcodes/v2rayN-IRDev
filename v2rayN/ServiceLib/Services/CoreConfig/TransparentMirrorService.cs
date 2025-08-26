@@ -130,8 +130,7 @@ public class TransparentMirrorService
     public void SetEnabled(bool enabled)
     {
         _isEnabled = enabled;
-        Logging.SaveLog("TransparentMirrorService",
-            $"Transparent mirroring {(enabled ? "enabled" : "disabled")}");
+        Logging.SaveLog($"TransparentMirrorService: Transparent mirroring {(enabled ? "enabled" : "disabled")}");
     }
 
     /// <summary>
@@ -199,8 +198,7 @@ public class TransparentMirrorService
     public void AddMirrorMapping(string originalDomain, string mirrorUrl)
     {
         _mirrorMappings[originalDomain.ToLower()] = mirrorUrl;
-        Logging.SaveLog("TransparentMirrorService",
-            $"Added mirror mapping: {originalDomain} → {mirrorUrl}");
+        Logging.SaveLog($"TransparentMirrorService: Added mirror mapping: {originalDomain} → {mirrorUrl}");
     }
 
     /// <summary>
@@ -210,8 +208,7 @@ public class TransparentMirrorService
     {
         if (_mirrorMappings.Remove(domain.ToLower()))
         {
-            Logging.SaveLog("TransparentMirrorService",
-                $"Removed mirror mapping for: {domain}");
+            Logging.SaveLog($"TransparentMirrorService: Removed mirror mapping for: {domain}");
         }
     }
 

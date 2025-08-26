@@ -149,7 +149,7 @@ public class SanctionsBypassService
                 _currentDnsServer = dnsKeys[currentIndex + 1];
             }
 
-            Logging.SaveLog("SanctionsBypassService", $"Switched DNS server to: {_currentDnsServer}");
+            Logging.SaveLog($"SanctionsBypassService: Switched DNS server to: {_currentDnsServer}");
             return _currentDnsServer;
         }
     }
