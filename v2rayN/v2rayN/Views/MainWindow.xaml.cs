@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using ReactiveUI;
 using ServiceLib.Manager;
+using ServiceLib.Common;
 using Splat;
 using v2rayN.Manager;
 
@@ -184,7 +185,20 @@ public partial class MainWindow
                 return (new DNSSettingWindow().ShowDialog() ?? false);
 
             case EViewAction.SanctionsBypassSettingWindow:
-                return (new SanctionsBypassWindow().ShowDialog() ?? false);
+                try
+                {
+                    Logging.SaveLog("MainWindow: Opening SanctionsBypassWindow...");
+                    var window = new SanctionsBypassWindow();
+                    var result = window.ShowDialog() ?? false;
+                    Logging.SaveLog($"MainWindow: SanctionsBypassWindow result: {result}");
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Logging.SaveLog($"MainWindow: Error opening SanctionsBypassWindow - {ex}");
+                    MessageBox.Show($"Error opening Sanctions Bypass Settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
 
             case EViewAction.RoutingSettingWindow:
                 return (new RoutingSettingWindow().ShowDialog() ?? false);

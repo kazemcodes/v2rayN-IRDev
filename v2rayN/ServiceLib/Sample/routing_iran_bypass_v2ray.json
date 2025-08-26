@@ -1,0 +1,91 @@
+{
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "domain": [
+          "domain:maven.google.com",
+          "domain:dl.google.com",
+          "domain:gradle.org",
+          "domain:services.gradle.org",
+          "domain:developer.android.com"
+        ],
+        "outboundTag": "iran-mirror"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:google.com",
+          "domain:googleapis.com",
+          "domain:firebase.com",
+          "domain:android.com"
+        ],
+        "outboundTag": "iran-dns"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:github.com",
+          "domain:githubusercontent.com",
+          "domain:microsoft.com",
+          "domain:apple.com",
+          "domain:discord.com",
+          "domain:discordapp.com",
+          "domain:discord.media",
+          "domain:azure.com",
+          "domain:zoom.us",
+          "domain:spotify.com",
+          "domain:mozilla.org",
+          "domain:paypal.com",
+          "domain:skype.com",
+          "domain:imgur.com",
+          "domain:medium.com",
+          "domain:gravatar.com",
+          "domain:webex.com",
+          "domain:apache.org",
+          "domain:udemy.com",
+          "domain:ibm.com",
+          "domain:zendesk.com",
+          "domain:upwork.com",
+          "domain:teamviewer.com",
+          "domain:oracle.com",
+          "domain:dell.com",
+          "domain:slack.com",
+          "domain:opensea.io"
+        ],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:maven.myket.ir",
+          "domain:en-mirror.ir",
+          "domain:maven.aliyun.com",
+          "domain:mirrors.huaweicloud.com",
+          "domain:mirrors.cloud.tencent.com"
+        ],
+        "outboundTag": "direct"
+      }
+    ]
+  },
+  "outbounds": [
+    {
+      "tag": "iran-mirror",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIP",
+        "redirect": "maven.myket.ir:443"
+      }
+    },
+    {
+      "tag": "iran-dns",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIPv4",
+        "userLevel": 0
+      }
+    }
+  ]
+}
+

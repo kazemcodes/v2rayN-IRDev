@@ -240,3 +240,4 @@ All configuration files are copied to `Release/windows-64/config/` for easy acce
 **Happy building!** 🎉
 
 *Built with ❤️ for Iranian developers facing sanctions*
+

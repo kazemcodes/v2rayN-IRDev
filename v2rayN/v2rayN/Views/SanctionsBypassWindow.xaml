@@ -8,221 +8,181 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
-    xmlns:local="clr-namespace:v2rayN.Views"
-    mc:Ignorable="d"
-    Title="Sanctions Bypass Settings" Height="600" Width="800"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    Title="Iran Sanctions Bypass Settings"
+    Width="800"
+    Height="600"
+    x:TypeArguments="vms:SanctionsBypassViewModel"
+    ShowInTaskbar="False"
+    Style="{StaticResource WindowGlobal}"
     WindowStartupLocation="CenterScreen"
-    x:TypeArguments="v2rayN.ViewModels.SanctionsBypassViewModel">
-
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="Sanctions Bypass Configuration"
-                       FontSize="18" FontWeight="Bold"
-                       Margin="0,0,0,10"/>
-            <TextBlock Text="Configure automatic DNS switching for Iranian sanctions bypass"
-                       FontSize="12" Opacity="0.7"/>
+    mc:Ignorable="d">
+    
+    <DockPanel Margin="{StaticResource Margin8}">
+        <StackPanel
+            Margin="{StaticResource Margin4}"
+            HorizontalAlignment="Center"
+            DockPanel.Dock="Bottom"
+            Orientation="Horizontal">
+            <Button
+                x:Name="btnSave"
+                Width="100"
+                Content="{x:Static resx:ResUI.TbConfirm}"
+                IsDefault="True"
+                Style="{StaticResource DefButton}" />
+            <Button
+                x:Name="btnCancel"
+                Width="100"
+                Margin="{StaticResource MarginLeftRight8}"
+                Content="{x:Static resx:ResUI.TbCancel}"
+                IsCancel="true"
+                Style="{StaticResource DefButton}" />
         </StackPanel>
 
-        <!-- Main Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="0,0,0,10">
+        <TabControl HorizontalContentAlignment="Left">
+            <TabItem Header="Iran Bypass">
+                <ScrollViewer VerticalScrollBarVisibility="Visible">
+                    <Grid Margin="{StaticResource Margin8}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                <!-- Status Section -->
-                <GroupBox Header="Current Status" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <!-- Enable/Disable -->
+                        <CheckBox
+                            x:Name="chkEnableSanctionsDetection"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Content="Enable Iranian Sanctions Detection"
+                            IsChecked="True" />
 
-                            <TextBlock Grid.Column="0" Text="Sanctions Status:"
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock x:Name="txtSanctionsStatus" Grid.Column="1"
-                                       Text="Checking..." VerticalAlignment="Center"/>
-                            <Button x:Name="btnCheckStatus" Grid.Column="2"
-                                    Content="Check Now" Padding="10,5"
-                                    Click="btnCheckStatus_Click"/>
-                        </Grid>
+                        <CheckBox
+                            x:Name="chkEnableIranianDnsAutoSwitch"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Content="Enable Automatic Iranian DNS Switching"
+                            IsChecked="True" />
 
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                        <CheckBox
+                            x:Name="chkEnableTransparentMirroring"
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Content="Enable Transparent Repository Mirroring"
+                            IsChecked="True" />
 
-                            <TextBlock Grid.Column="0" Text="Current DNS:"
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock x:Name="txtCurrentDns" Grid.Column="1"
-                                       Text="Not configured" VerticalAlignment="Center"/>
-                        </Grid>
+                        <CheckBox
+                            x:Name="chkEnableHardBlockOnFailure"
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Content="Block VPN Connection if Sanctions Bypass Fails"
+                            IsChecked="True" />
 
-                        <CheckBox x:Name="chkEnableAutoSwitch" Content="Enable automatic DNS switching"
-                                  Margin="0,10,0,0" IsChecked="True"/>
-                    </StackPanel>
-                </GroupBox>
+                        <!-- Preferred DNS Server -->
+                        <TextBlock
+                            Grid.Row="4"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="Preferred Iranian DNS:" />
+                        <ComboBox
+                            x:Name="cmbPreferredIranianDnsServer"
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            SelectedValue="electro-primary" />
 
-                <!-- Iranian DNS Servers -->
-                <GroupBox Header="Iranian DNS Servers" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Configure Iranian DNS servers for sanctions bypass:"
-                                   Margin="0,0,0,10" FontWeight="SemiBold"/>
+                        <!-- Check Interval -->
+                        <TextBlock
+                            Grid.Row="5"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="Check Interval (minutes):" />
+                        <TextBox
+                            x:Name="txtSanctionsCheckInterval"
+                            Grid.Row="5"
+                            Grid.Column="1"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="5" />
 
-                        <DataGrid x:Name="dgIranianDns" AutoGenerateColumns="False"
-                                  Height="200" Margin="0,0,0,10"
-                                  CanUserAddRows="False" CanUserDeleteRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Name" Binding="{Binding Key}"
-                                                    Width="150" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Primary IP" Binding="{Binding Value}"
-                                                    Width="120" IsReadOnly="True"/>
-                                <DataGridTemplateColumn Header="Status" Width="80">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="Unknown" Foreground="Gray"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Test" Width="60">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="Test" Padding="5,2"
-                                                    Click="btnTestDns_Click" Tag="{Binding Key}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <!-- DNS Timeout -->
+                        <TextBlock
+                            Grid.Row="6"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="DNS Timeout (seconds):" />
+                        <TextBox
+                            x:Name="txtDnsTimeout"
+                            Grid.Row="6"
+                            Grid.Column="1"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="10" />
 
-                        <Button x:Name="btnTestAll" Content="Test All DNS Servers"
-                                Padding="10,5" HorizontalAlignment="Left"
-                                Click="btnTestAllDns_Click"/>
-                    </StackPanel>
-                </GroupBox>
+                        <!-- Auto Update -->
+                        <CheckBox
+                            x:Name="chkAutoUpdateBlockedDomainsList"
+                            Grid.Row="7"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Content="Auto-update Blocked Domains List from GitHub"
+                            IsChecked="True" />
 
-                <!-- Google Domains -->
-                <GroupBox Header="Protected Domains" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Domains that require sanctions bypass:"
-                                   Margin="0,0,0,10" FontWeight="SemiBold"/>
-
-                        <ListBox x:Name="lstGoogleDomains" Height="120" Margin="0,0,0,10">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding}" FontFamily="Consolas"/>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-
-                        <Button x:Name="btnAddDomain" Content="Add Domain"
-                                Padding="10,5" HorizontalAlignment="Left"
-                                Click="btnAddDomain_Click"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- Transparent Mirroring -->
-                <GroupBox Header="Transparent Mirroring" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Automatically redirect repository requests to Iranian mirrors:"
-                                   Margin="0,0,0,10" FontWeight="SemiBold"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <CheckBox x:Name="chkEnableMirroring" Content="Enable transparent mirroring"
-                                      VerticalAlignment="Center" Margin="0,0,15,0" IsChecked="True"/>
-                            <Button x:Name="btnTestMirrors" Grid.Column="1" Content="Test Mirrors"
-                                    Padding="10,5" Margin="0,0,10,0" Click="btnTestMirrors_Click"/>
-                            <Button x:Name="btnRefreshMappings" Grid.Column="2" Content="Refresh Mappings"
-                                    Padding="10,5" Click="btnRefreshMappings_Click"/>
-                        </Grid>
-
-                        <DataGrid x:Name="dgMirrorMappings" AutoGenerateColumns="False"
-                                  Height="150" Margin="0,10,0,0"
-                                  CanUserAddRows="False" CanUserDeleteRows="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Original Domain" Binding="{Binding Key}"
-                                                    Width="200" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Mirror URL" Binding="{Binding Value}"
-                                                    Width="250" IsReadOnly="True"/>
-                                <DataGridTemplateColumn Header="Status" Width="80">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="Unknown" Foreground="Gray"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <Button x:Name="btnAddCustomMapping" Content="Add Custom Mapping"
-                                Padding="10,5" HorizontalAlignment="Left" Margin="0,10,0,0"
-                                Click="btnAddCustomMapping_Click"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- Settings -->
-                <GroupBox Header="Advanced Settings" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="100"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0" Text="Check Interval (minutes):"
-                                       VerticalAlignment="Center" Margin="0,0,10,5"/>
-                            <TextBox x:Name="txtCheckInterval" Grid.Column="1"
-                                     Text="5" VerticalAlignment="Center"/>
-                        </Grid>
-
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="100"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0" Text="Timeout (seconds):"
-                                       VerticalAlignment="Center" Margin="0,0,10,5"/>
-                            <TextBox x:Name="txtTimeout" Grid.Column="1"
-                                     Text="10" VerticalAlignment="Center"/>
-                        </Grid>
-
-                        <CheckBox x:Name="chkAutoStart" Content="Start monitoring on application start"
-                                  Margin="0,10,0,0" IsChecked="True"/>
-                        <CheckBox x:Name="chkEnableTransparentMirroring" Content="Enable transparent mirroring on startup"
-                                  Margin="0,10,0,0" IsChecked="True"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- Logs -->
-                <GroupBox Header="Activity Log" Margin="0,0,0,15">
-                    <TextBox x:Name="txtLog" Height="150" IsReadOnly="True"
-                             VerticalScrollBarVisibility="Auto"
-                             FontFamily="Consolas" FontSize="11"/>
-                </GroupBox>
-
-            </StackPanel>
-        </ScrollViewer>
-
-        <!-- Footer -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="btnSave" Content="Save Settings" Padding="15,8" Margin="0,0,10,0"
-                    Click="btnSave_Click"/>
-            <Button x:Name="btnCancel" Content="Cancel" Padding="15,8"
-                    Click="btnCancel_Click"/>
-        </StackPanel>
-    </Grid>
-</Window>
+                        <!-- Status and Tests -->
+                        <GroupBox
+                            Grid.Row="8"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            Header="Status and Testing">
+                            <StackPanel>
+                                <TextBlock x:Name="txtCurrentStatus" 
+                                           Text="Status: Ready" 
+                                           Margin="{StaticResource Margin4}"
+                                           FontWeight="Bold" />
+                                
+                                <StackPanel Orientation="Horizontal" Margin="{StaticResource Margin4}">
+                                    <Button x:Name="btnTestConnection" Content="Test Connection" 
+                                            Margin="{StaticResource MarginLeftRight4}" />
+                                    <Button x:Name="btnUpdateDomainsList" Content="Update Domains List" 
+                                            Margin="{StaticResource MarginLeftRight4}" />
+                                    <Button x:Name="btnApplyIranPreset" Content="Apply Iran Preset" 
+                                            Margin="{StaticResource MarginLeftRight4}" 
+                                            Style="{StaticResource DefButton}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</base:WindowBase>

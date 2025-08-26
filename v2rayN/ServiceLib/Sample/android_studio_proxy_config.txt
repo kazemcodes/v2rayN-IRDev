@@ -1,0 +1,142 @@
+# Android Studio Proxy Configuration for Iranian Sanctions Bypass
+# This file contains proxy settings for Android Studio to bypass sanctions
+
+# =================================================================
+# METHOD 1: Use Direct HTTP Proxy (Recommended for Iran)
+# =================================================================
+
+# Configure Android Studio to use HTTP proxy:
+# 1. Open Android Studio
+# 2. Go to File → Settings → Appearance & Behavior → System Settings → HTTP Proxy
+# 3. Select "Manual proxy configuration"
+# 4. Set Host name: 127.0.0.1 (or your v2rayN proxy IP)
+# 5. Set Port number: 1080 (or your SOCKS5 proxy port)
+# 6. Select "SOCKS" as proxy type
+# 7. Check "Proxy authentication" if needed
+# 8. Click "Check connection" with URL: https://maven.myket.ir
+# 9. Click OK to save
+
+# Alternative proxy ports you can try:
+# - SOCKS5: 1080, 2080, 3080
+# - HTTP: 8080, 8888
+
+# =================================================================
+# METHOD 2: Use System Proxy (Automatic)
+# =================================================================
+
+# 1. Start v2rayN and connect to Iranian server
+# 2. In Android Studio: File → Settings → Appearance & Behavior → System Settings → HTTP Proxy
+# 3. Select "Auto-detect proxy settings"
+# 4. Android Studio will automatically use system proxy
+
+# =================================================================
+# METHOD 3: Environment Variables (For Gradle)
+# =================================================================
+
+# Set these environment variables before running Gradle:
+
+# For Windows Command Prompt:
+# set HTTP_PROXY=http://127.0.0.1:8080
+# set HTTPS_PROXY=http://127.0.0.1:8080
+
+# For Windows PowerShell:
+# $env:HTTP_PROXY="http://127.0.0.1:8080"
+# $env:HTTPS_PROXY="http://127.0.0.1:8080"
+
+# For Linux/macOS:
+# export HTTP_PROXY=http://127.0.0.1:8080
+# export HTTPS_PROXY=http://127.0.0.1:8080
+
+# =================================================================
+# METHOD 4: Gradle Properties (For Project-specific)
+# =================================================================
+
+# Add these lines to your project's gradle.properties file:
+# systemProp.http.proxyHost=127.0.0.1
+# systemProp.http.proxyPort=8080
+# systemProp.https.proxyHost=127.0.0.1
+# systemProp.https.proxyPort=8080
+
+# =================================================================
+# IRANIAN MIRROR DOMAINS (For Testing)
+# =================================================================
+
+# Test these URLs in your browser to verify proxy is working:
+# https://maven.myket.ir/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.aar
+# https://en-mirror.ir/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.aar
+# https://maven.aliyun.com/repository/central/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.aar
+
+# =================================================================
+# TROUBLESHOOTING
+# =================================================================
+
+# 1. If proxy doesn't work:
+#    - Make sure v2rayN is running and connected
+#    - Try different proxy ports
+#    - Check firewall settings
+
+# 2. If Gradle still fails:
+#    - Clear Gradle cache: ./gradlew clean build --refresh-dependencies
+#    - Check proxy settings in Android Studio
+#    - Restart Android Studio
+
+# 3. For VPN connection issues:
+#    - Use Iranian DNS servers in v2rayN settings
+#    - Enable "Iran Regional Preset" in v2rayN
+#    - Load the sanctions bypass configuration files
+
+# =================================================================
+# RECOMMENDED WORKFLOW
+# =================================================================
+
+# 1. Start v2rayN application
+# 2. Apply Iran regional preset
+# 3. Load transparent routing rules
+# 4. Load DNS configuration
+# 5. Connect to Iranian VPN server
+# 6. Configure Android Studio proxy (Method 1)
+# 7. Test connection with Iranian mirror URLs
+# 8. Start developing with fast Iranian repositories
+
+# =================================================================
+# SUPPORTED MIRRORS
+# =================================================================
+
+# Primary Iranian Mirrors:
+# - maven.myket.ir (Myket Maven)
+# - en-mirror.ir (EN Mirror)
+# - maven.aliyun.com (Alibaba Cloud)
+# - mirrors.huaweicloud.com (Huawei Cloud)
+
+# Repository Mappings:
+# - maven.google.com → maven.myket.ir
+# - gradle.org → en-mirror.ir
+# - repo.maven.apache.org → maven.myket.ir
+# - central.sonatype.org → maven.myket.ir
+
+# =================================================================
+# PERFORMANCE TIPS
+# =================================================================
+
+# 1. Use Iranian servers during development (fastest)
+# 2. Keep original repositories as fallback
+# 3. Clear Gradle cache periodically
+# 4. Use Android Studio's built-in proxy detection
+# 5. Monitor connection status in v2rayN sanctions bypass window
+
+# =================================================================
+# EMERGENCY CONFIGURATION
+# =================================================================
+
+# If all else fails, use direct mirror URLs in build.gradle:
+
+repositories {
+    maven { url 'https://maven.myket.ir' }
+    maven { url 'https://en-mirror.ir' }
+    maven { url 'https://maven.aliyun.com/repository/central' }
+    google()
+    mavenCentral()
+}
+
+# This bypasses sanctions by using Iranian mirrors directly
+

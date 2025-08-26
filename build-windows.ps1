@@ -249,3 +249,4 @@ if ($IncludeArm64) {
 
 Write-Host ""
 Write-Host "🎉 Enjoy your Iranian sanctions bypass enabled v2rayN!" -ForegroundColor Green
+

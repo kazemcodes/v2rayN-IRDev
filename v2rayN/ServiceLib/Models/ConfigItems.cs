@@ -271,3 +271,16 @@ public class SimpleDNSItem
     public string? Hosts { get; set; }
     public string? DirectExpectedIPs { get; set; }
 }
+
+[Serializable]
+public class IranSanctionsBypassItem
+{
+    public bool EnableSanctionsDetection { get; set; } = true;
+    public bool EnableIranianDnsAutoSwitch { get; set; } = true;
+    public bool EnableTransparentMirroring { get; set; } = true;
+    public bool EnableHardBlockOnFailure { get; set; } = true;
+    public bool AutoUpdateBlockedDomainsList { get; set; } = true;
+    public string PreferredIranianDnsServer { get; set; } = "electro-primary";
+    public int SanctionsCheckIntervalMinutes { get; set; } = 5;
+    public int DnsTimeoutSeconds { get; set; } = 10;
+}

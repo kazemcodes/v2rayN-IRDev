@@ -127,3 +127,4 @@ dir /b "Release\windows-64"
 echo.
 echo 🎉 Enjoy your Iranian sanctions bypass enabled v2rayN!
 pause
+

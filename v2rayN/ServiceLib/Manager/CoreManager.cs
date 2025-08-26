@@ -67,6 +67,20 @@ public class CoreManager
             return;
         }
 
+        // Validate sanctions bypass before allowing connection
+        var sanctionsService = new ServiceLib.Services.CoreConfig.SanctionsBypassService();
+        var (canConnect, reason) = await sanctionsService.ValidateConnectionAsync();
+
+        if (!canConnect)
+        {
+            UpdateFunc(false, $"🚫 Connection Blocked: {reason}");
+            Logging.SaveLog($"CoreManager: Connection blocked due to sanctions bypass failure: {reason}");
+            return;
+        }
+
+        UpdateFunc(false, $"✅ Sanctions bypass validated: {reason}");
+        Logging.SaveLog($"CoreManager: Sanctions bypass validated successfully: {reason}");
+
         var fileName = Utils.GetBinConfigPath(Global.CoreConfigFileName);
         var result = await CoreConfigHandler.GenerateClientConfig(node, fileName);
         if (result.Success != true)

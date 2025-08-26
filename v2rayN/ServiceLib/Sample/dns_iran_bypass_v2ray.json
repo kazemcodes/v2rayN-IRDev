@@ -1,0 +1,83 @@
+{
+  "dns": {
+    "hosts": {
+      "developer.android.com": "78.157.42.100",
+      "maven.google.com": "maven.myket.ir",
+      "dl.google.com": "maven.myket.ir", 
+      "gradle.org": "maven.myket.ir",
+      "services.gradle.org": "maven.myket.ir",
+      "firebase.google.com": "78.157.42.100",
+      "firebase.googleapis.com": "78.157.42.100",
+      "firebasestorage.googleapis.com": "78.157.42.100",
+      "googleapis.com": "78.157.42.100",
+      "fonts.googleapis.com": "78.157.42.100",
+      "ajax.googleapis.com": "78.157.42.100",
+      "developers.google.com": "78.157.42.100",
+      "accounts.google.com": "78.157.42.100",
+      "ads.google.com": "78.157.42.100",
+      "adservice.google.com": "78.157.42.100",
+      "ai.google.com": "78.157.42.100",
+      "analytics.google.com": "78.157.42.100",
+      "apis.google.com": "78.157.42.100",
+      "appengine.google.com": "78.157.42.100",
+      "books.google.com": "78.157.42.100",
+      "business.google.com": "78.157.42.100",
+      "chat.google.com": "78.157.42.100",
+      "classroom.google.com": "78.157.42.100",
+      "clients.google.com": "78.157.42.100",
+      "clients2.google.com": "78.157.42.100",
+      "clients6.google.com": "78.157.42.100",
+      "cloud.google.com": "78.157.42.100",
+      "code.google.com": "78.157.42.100",
+      "datastudio.google.com": "78.157.42.100",
+      "dl-ssl.google.com": "78.157.42.100",
+      "issuetracker.google.com": "78.157.42.100",
+      "lens.google.com": "78.157.42.100",
+      "maps.google.com": "78.157.42.100",
+      "marketingplatform.google.com": "78.157.42.100",
+      "notifications.google.com": "78.157.42.100",
+      "one.google.com": "78.157.42.100",
+      "optimize.google.com": "78.157.42.100",
+      "pay.google.com": "78.157.42.100",
+      "payments.google.com": "78.157.42.100",
+      "play.google.com": "78.157.42.100",
+      "research.google.com": "78.157.42.100",
+      "services.google.com": "78.157.42.100",
+      "surveys.google.com": "78.157.42.100",
+      "tagmanager.google.com": "78.157.42.100",
+      "time.google.com": "78.157.42.100",
+      "remotedesktop.google.com": "78.157.42.100",
+      "checks.google.com": "78.157.42.100"
+    },
+    "servers": [
+      {
+        "address": "78.157.42.100",
+        "port": 53,
+        "domains": [
+          "domain:google.com",
+          "domain:googleapis.com",
+          "domain:android.com",
+          "domain:firebase.com",
+          "domain:gradle.org"
+        ]
+      },
+      {
+        "address": "10.202.10.10",
+        "port": 53,
+        "domains": [
+          "domain:github.com",
+          "domain:microsoft.com",
+          "domain:apple.com",
+          "domain:discord.com"
+        ]
+      },
+      {
+        "address": "1.1.1.1",
+        "port": 53
+      }
+    ],
+    "clientIp": "1.2.3.4",
+    "tag": "dns_inbound"
+  }
+}
+

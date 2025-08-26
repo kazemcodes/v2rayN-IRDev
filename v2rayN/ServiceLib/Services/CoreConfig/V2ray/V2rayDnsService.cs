@@ -48,6 +48,9 @@ public partial class CoreConfigV2rayService
 
             await GenDnsServers(node, v2rayConfig, simpleDNSItem);
             await GenDnsHosts(v2rayConfig, simpleDNSItem);
+            
+            // Apply Iranian sanctions bypass if enabled
+            await ApplyIranianSanctionsBypass(v2rayConfig);
 
             if (v2rayConfig.routing.domainStrategy == Global.IPIfNonMatch)
             {
@@ -66,6 +69,142 @@ public partial class CoreConfigV2rayService
             Logging.SaveLog(_tag, ex);
         }
         return 0;
+    }
+
+    /// <summary>
+    /// Apply Iranian sanctions bypass DNS and routing configuration
+    /// </summary>
+    private async Task ApplyIranianSanctionsBypass(V2rayConfig v2rayConfig)
+    {
+        try
+        {
+            var sanctionsService = new SanctionsBypassService();
+            var (canConnect, reason) = await sanctionsService.ValidateConnectionAsync();
+            
+            if (!canConnect)
+            {
+                Logging.SaveLog("Iranian sanctions bypass not available: " + reason);
+                return;
+            }
+
+            // Add Iranian DNS servers
+            if (v2rayConfig.dns?.servers != null)
+            {
+                v2rayConfig.dns.servers.Insert(0, new DnsServer4Ray
+                {
+                    address = "78.157.42.100", // Electro primary
+                    domains = new List<string>
+                    {
+                        "domain:google.com",
+                        "domain:googleapis.com", 
+                        "domain:android.com",
+                        "domain:firebase.com",
+                        "domain:gradle.org"
+                    }
+                });
+
+                v2rayConfig.dns.servers.Insert(1, new DnsServer4Ray
+                {
+                    address = "10.202.10.10", // Radar primary
+                    domains = new List<string>
+                    {
+                        "domain:github.com",
+                        "domain:microsoft.com",
+                        "domain:apple.com",
+                        "domain:discord.com"
+                    }
+                });
+            }
+
+            // Add DNS hosts for direct redirection
+            if (v2rayConfig.dns?.hosts != null)
+            {
+                // Redirect Google Maven to Iranian mirrors
+                v2rayConfig.dns.hosts["maven.google.com"] = "maven.myket.ir";
+                v2rayConfig.dns.hosts["dl.google.com"] = "maven.myket.ir";
+                v2rayConfig.dns.hosts["gradle.org"] = "maven.myket.ir";
+                v2rayConfig.dns.hosts["services.gradle.org"] = "maven.myket.ir";
+                
+                // Point developer domains to Iranian DNS
+                v2rayConfig.dns.hosts["developer.android.com"] = "78.157.42.100";
+                v2rayConfig.dns.hosts["firebase.google.com"] = "78.157.42.100";
+                v2rayConfig.dns.hosts["firebase.googleapis.com"] = "78.157.42.100";
+                v2rayConfig.dns.hosts["firebasestorage.googleapis.com"] = "78.157.42.100";
+            }
+
+            // Add routing rules for Iranian sanctions bypass
+            if (v2rayConfig.routing?.rules != null)
+            {
+                // Rule for Iranian mirrors - use direct connection
+                v2rayConfig.routing.rules.Insert(0, new RulesItem4Ray
+                {
+                    type = "field",
+                    domain = new List<string>
+                    {
+                        "domain:maven.myket.ir",
+                        "domain:en-mirror.ir", 
+                        "domain:maven.aliyun.com",
+                        "domain:mirrors.huaweicloud.com",
+                        "domain:mirrors.cloud.tencent.com"
+                    },
+                    outboundTag = Global.DirectTag
+                });
+
+                // Rule for Google domains that should be redirected
+                v2rayConfig.routing.rules.Insert(1, new RulesItem4Ray
+                {
+                    type = "field", 
+                    domain = new List<string>
+                    {
+                        "domain:google.com",
+                        "domain:googleapis.com",
+                        "domain:android.com", 
+                        "domain:firebase.com",
+                        "domain:gradle.org"
+                    },
+                    outboundTag = Global.ProxyTag
+                });
+            }
+
+            // Clear DNS cache to prevent cached blocked responses
+            await ClearDnsCacheAsync();
+            
+            Logging.SaveLog("Iranian sanctions bypass applied to V2Ray configuration");
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    /// <summary>
+    /// Clear DNS cache to prevent cached blocking responses for Iranian developers
+    /// </summary>
+    private async Task ClearDnsCacheAsync()
+    {
+        try
+        {
+            // Clear Windows DNS cache
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "ipconfig",
+                Arguments = "/flushdns",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(processInfo);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                Logging.SaveLog("DNS cache cleared to prevent sanction-cached responses");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"Warning: Could not clear DNS cache - {ex.Message}");
+        }
     }
 
     private async Task<int> GenDnsServers(ProfileItem? node, V2rayConfig v2rayConfig, SimpleDNSItem simpleDNSItem)

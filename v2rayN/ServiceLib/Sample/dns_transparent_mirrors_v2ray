@@ -17,6 +17,10 @@
       "jcenter.bintray.com": "185.105.238.50",
       "bintray.com": "185.105.238.50",
 
+      "maven.aliyun.com": "47.246.24.22",
+      "mirrors.huaweicloud.com": "161.189.25.123",
+      "mirrors.cloud.tencent.com": "119.29.29.29",
+
       "github.com": "140.82.112.3",
       "api.github.com": "140.82.112.3",
       "raw.githubusercontent.com": "185.199.108.133",
@@ -70,19 +74,47 @@
         "address": "178.22.122.100",
         "domains": [
           "geosite:ir",
-          "geosite:private"
+          "geosite:private",
+          "domain:gradle.org",
+          "domain:maven.google.com",
+          "domain:repo.maven.apache.org"
         ],
-        "skipFallback": true,
+        "skipFallback": false,
         "tag": "shecan-primary"
       },
       {
         "address": "185.51.200.2",
         "domains": [
           "geosite:ir",
-          "geosite:private"
+          "geosite:private",
+          "domain:gradle.org",
+          "domain:maven.google.com",
+          "domain:repo.maven.apache.org"
         ],
-        "skipFallback": true,
+        "skipFallback": false,
         "tag": "shecan-secondary"
+      },
+      {
+        "address": "10.202.10.10",
+        "domains": [
+          "geosite:ir",
+          "geosite:private",
+          "domain:gradle.org",
+          "domain:maven.google.com"
+        ],
+        "skipFallback": false,
+        "tag": "radar-primary"
+      },
+      {
+        "address": "78.157.42.100",
+        "domains": [
+          "geosite:ir",
+          "geosite:private",
+          "domain:gradle.org",
+          "domain:maven.google.com"
+        ],
+        "skipFallback": false,
+        "tag": "electro-primary"
       },
       "https://dns.alidns.com/dns-query"
     ],

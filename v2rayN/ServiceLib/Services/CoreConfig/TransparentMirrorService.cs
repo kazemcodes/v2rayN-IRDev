@@ -184,47 +184,25 @@ public class TransparentMirrorService
         return string.Empty;
     }
 
-    /// <summary>
-    /// Check if a domain should be mirrored
-    /// </summary>
-    public bool ShouldMirrorDomain(string domain)
+    public async Task EnableTransparentMirroringAsync()
     {
-        return _mirrorMappings.ContainsKey(domain.ToLower());
-    }
-
-    /// <summary>
-    /// Add a custom mirror mapping
-    /// </summary>
-    public void AddMirrorMapping(string originalDomain, string mirrorUrl)
-    {
-        _mirrorMappings[originalDomain.ToLower()] = mirrorUrl;
-        Logging.SaveLog($"TransparentMirrorService: Added mirror mapping: {originalDomain} → {mirrorUrl}");
-    }
-
-    /// <summary>
-    /// Remove a mirror mapping
-    /// </summary>
-    public void RemoveMirrorMapping(string domain)
-    {
-        if (_mirrorMappings.Remove(domain.ToLower()))
+        try
         {
-            Logging.SaveLog($"TransparentMirrorService: Removed mirror mapping for: {domain}");
+            // This would enable transparent mirroring in the VPN configuration
+            Logging.SaveLog("TransparentMirrorService: Enabling transparent mirroring");
+
+            // TODO: Implement actual transparent mirroring setup
+            // This could involve:
+            // 1. Setting up DNS rules for repository domains
+            // 2. Configuring routing rules for mirrors
+            // 3. Enabling host file modifications
+
+            await Task.CompletedTask;
         }
-    }
-
-    /// <summary>
-    /// Get statistics about mirror usage
-    /// </summary>
-    public async Task<Dictionary<string, bool>> GetMirrorHealthStatusAsync()
-    {
-        var status = new Dictionary<string, bool>();
-
-        foreach (var mapping in _mirrorMappings)
+        catch (Exception ex)
         {
-            var isHealthy = await TestMirrorAsync(mapping.Value);
-            status[mapping.Key] = isHealthy;
+            Logging.SaveLog($"TransparentMirrorService: Error enabling transparent mirroring - {ex.Message}");
+            throw;
         }
-
-        return status;
     }
 }
