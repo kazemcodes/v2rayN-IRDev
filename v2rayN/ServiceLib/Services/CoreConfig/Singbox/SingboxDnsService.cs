@@ -69,6 +69,33 @@ public partial class CoreConfigSingboxService
         resolverDns.tag = Global.SingboxOutboundResolverTag;
         resolverDns.domain_resolver = Global.SingboxFinalResolverTag;
 
+        // Check for sanctions bypass and transparent mirroring
+        var sanctionsBypassService = new SanctionsBypassService();
+        var transparentMirrorService = new TransparentMirrorService();
+
+        var shouldUseBypass = await sanctionsBypassService.ShouldUseSanctionsBypassAsync();
+        var shouldUseMirroring = await transparentMirrorService.ShouldEnableTransparentMirroringAsync();
+
+        if (shouldUseBypass || shouldUseMirroring)
+        {
+            // Add Iranian DNS servers for repository domains
+            var iranianDnsServers = sanctionsBypassService.GetIranianDnsServers();
+
+            foreach (var iranianDns in iranianDnsServers)
+            {
+                var iranianServer = new Server4Sbox
+                {
+                    tag = iranianDns.Key,
+                    address = iranianDns.Value,
+                    address_resolver = "local",
+                    strategy = "ipv4_only",
+                    detour = "direct"
+                };
+
+                singboxConfig.dns.servers.Add(iranianServer);
+            }
+        }
+
         var hostsDns = new Server4Sbox
         {
             tag = Global.SingboxHostsDNSTag,
@@ -186,6 +213,38 @@ public partial class CoreConfigSingboxService
                 clash_mode = ERuleMode.Direct.ToString()
             }
         });
+
+        // Add rules for Iranian DNS servers if sanctions bypass is needed
+        if (shouldUseBypass)
+        {
+            var googleDomains = new[]
+            {
+                "gradle.org",
+                "services.gradle.org",
+                "maven.google.com",
+                "dl.google.com",
+                "repo.maven.apache.org",
+                "repo1.maven.org",
+                "central.sonatype.org",
+                "oss.sonatype.org",
+                "plugins.gradle.org",
+                "jcenter.bintray.com",
+                "bintray.com",
+                "developer.android.com",
+                "firebase.google.com",
+                "firebase.googleapis.com",
+                "firebasestorage.googleapis.com",
+                "googleapis.com"
+            };
+
+            singboxConfig.dns.rules.Insert(0, new Rule4Sbox
+            {
+                domain = googleDomains,
+                server = "shecan-primary", // Primary Iranian DNS for Google domains
+                disable_cache = false,
+                fallback_server = "radar-primary" // Fallback to another Iranian DNS
+            });
+        }
 
         if (simpleDNSItem.BlockBindingQuery == true)
         {

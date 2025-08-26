@@ -1,0 +1,69 @@
+// settings.gradle for Iranian Android Development
+// Place this file in your project's root directory
+
+pluginManagement {
+    repositories {
+        // Iranian Mirrors (Primary - Fast and local)
+        maven {
+            url 'https://maven.myket.ir'
+        }
+        maven {
+            url 'https://en-mirror.ir'
+        }
+
+        // Chinese Mirrors (Secondary - Fast international)
+        maven {
+            url 'https://maven.aliyun.com/repository/central'
+        }
+        maven {
+            url 'https://mirrors.huaweicloud.com/repository/maven/'
+        }
+
+        // Original repositories (Fallback)
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // Iranian Mirrors (Primary - Fast and local)
+        maven {
+            url 'https://maven.myket.ir'
+        }
+        maven {
+            url 'https://en-mirror.ir'
+        }
+
+        // Chinese Mirrors (Secondary - Fast international)
+        maven {
+            url 'https://maven.aliyun.com/repository/central'
+        }
+        maven {
+            url 'https://mirrors.huaweicloud.com/repository/maven/'
+        }
+        maven {
+            url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/'
+        }
+
+        // Original repositories (Fallback)
+        google()
+        mavenCentral()
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+}
+
+// Optional: Configure proxy for all HTTP requests
+gradle.startParameter.isOffline = false
+
+// Configure build cache for faster builds
+buildCache {
+    local {
+        enabled = true
+        push = true
+    }
+}

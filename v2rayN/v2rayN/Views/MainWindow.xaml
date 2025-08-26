@@ -175,6 +175,10 @@
                                     Height="{StaticResource MenuItemHeight}"
                                     Header="{x:Static resx:ResUI.menuDNSSetting}" />
                                 <MenuItem
+                                    x:Name="menuSanctionsBypassSetting"
+                                    Height="{StaticResource MenuItemHeight}"
+                                    Header="Sanctions Bypass Settings" />
+                                <MenuItem
                                     x:Name="menuFullConfigTemplate"
                                     Height="{StaticResource MenuItemHeight}"
                                     Header="{x:Static resx:ResUI.menuFullConfigTemplate}" />

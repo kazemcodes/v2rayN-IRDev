@@ -1,0 +1,95 @@
+{
+  "dns": {
+    "hosts": {
+      "dns.google": "8.8.8.8",
+      "dns.alidns.com": "223.5.5.5",
+      "one.one.one.one": "1.1.1.1",
+
+      "maven.google.com": "185.105.238.50",
+      "dl.google.com": "185.105.238.50",
+      "repo.maven.apache.org": "185.105.238.50",
+      "repo1.maven.org": "185.105.238.50",
+      "central.sonatype.org": "185.105.238.50",
+      "oss.sonatype.org": "185.105.238.50",
+      "gradle.org": "185.97.117.37",
+      "services.gradle.org": "185.97.117.37",
+      "plugins.gradle.org": "185.97.117.37",
+      "jcenter.bintray.com": "185.105.238.50",
+      "bintray.com": "185.105.238.50",
+
+      "github.com": "140.82.112.3",
+      "api.github.com": "140.82.112.3",
+      "raw.githubusercontent.com": "185.199.108.133",
+      "plugins.jetbrains.com": "91.189.114.72",
+      "www.jetbrains.com": "91.189.114.72",
+      "stackoverflow.com": "151.101.1.69",
+      "developer.android.com": "142.250.72.142"
+    },
+    "servers": [
+      {
+        "address": "https://dns.google/dns-query",
+        "domains": [
+          "domain:github.com",
+          "domain:api.github.com",
+          "domain:raw.githubusercontent.com",
+          "domain:plugins.jetbrains.com",
+          "domain:www.jetbrains.com",
+          "domain:stackoverflow.com",
+          "domain:developer.android.com"
+        ],
+        "skipFallback": false,
+        "expectIPs": [
+          "geoip:us",
+          "geoip:ca",
+          "geoip:eu"
+        ]
+      },
+      {
+        "address": "https://cloudflare-dns.com/dns-query",
+        "domains": [
+          "domain:firebase.google.com",
+          "domain:firebase.googleapis.com",
+          "domain:firebasestorage.googleapis.com",
+          "domain:googleapis.com"
+        ],
+        "skipFallback": false,
+        "expectIPs": [
+          "geoip:us",
+          "geoip:ca"
+        ]
+      },
+      {
+        "address": "https://dns.alidns.com/dns-query",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true
+      },
+      {
+        "address": "178.22.122.100",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shecan-primary"
+      },
+      {
+        "address": "185.51.200.2",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shecan-secondary"
+      },
+      "https://dns.alidns.com/dns-query"
+    ],
+    "clientIp": "auto",
+    "disableCache": false,
+    "disableFallback": false,
+    "disableFallbackIfMatch": false,
+    "queryStrategy": "UseIPv4"
+  }
+}

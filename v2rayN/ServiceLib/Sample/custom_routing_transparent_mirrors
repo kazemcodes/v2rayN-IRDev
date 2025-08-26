@@ -1,0 +1,136 @@
+[
+	{
+		"remarks": "Transparent Mirror - Maven Google → Myket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:maven.google.com"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - Maven Central → Myket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:repo.maven.apache.org",
+			"domain:repo1.maven.org"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - Gradle → EN Mirror",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:gradle.org",
+			"domain:services.gradle.org"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - Sonatype → Myket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:central.sonatype.org",
+			"domain:oss.sonatype.org"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - Google Downloads → Myket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:dl.google.com"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - Gradle Plugins → EN Mirror",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:plugins.gradle.org"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Transparent Mirror - JCenter → Myket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:jcenter.bintray.com",
+			"domain:bintray.com"
+		],
+		"port": "80,443",
+		"protocol": [
+			"http",
+			"https"
+		]
+	},
+	{
+		"remarks": "Block Bittorrent",
+		"outboundTag": "block",
+		"protocol": [
+			"bittorrent"
+		]
+	},
+	{
+		"remarks": "Block UDP 443",
+		"outboundTag": "block",
+		"port": "443",
+		"network": "udp"
+	},
+	{
+		"remarks": "Bypass Private Networks",
+		"outboundTag": "direct",
+		"ip": [
+			"geoip:private"
+		]
+	},
+	{
+		"remarks": "Bypass Private Domains",
+		"outboundTag": "direct",
+		"domain": [
+			"geosite:private"
+		]
+	},
+	{
+		"remarks": "Bypass Iran",
+		"outboundTag": "direct",
+		"domain": [
+			"geosite:ir"
+		]
+	},
+	{
+		"remarks": "Bypass Iran IP",
+		"outboundTag": "direct",
+		"ip": [
+			"geoip:ir"
+		]
+	},
+	{
+		"remarks": "Final Proxy Rule",
+		"port": "0-65535",
+		"outboundTag": "proxy"
+	}
+]

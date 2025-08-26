@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <proxies>
+    <proxy>
+      <id>v2ray-proxy</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <host>127.0.0.1</host>
+      <port>10809</port>
+    </proxy>
+    <proxy>
+      <id>v2ray-proxy-https</id>
+      <active>true</active>
+      <protocol>https</protocol>
+      <host>127.0.0.1</host>
+      <port>10809</port>
+    </proxy>
+  </proxies>
+
+  <mirrors>
+    <!-- Iranian Maven Mirrors (Primary) -->
+    <mirror>
+      <id>myket-maven</id>
+      <mirrorOf>central,google</mirrorOf>
+      <name>Myket Maven Repository</name>
+      <url>https://maven.myket.ir</url>
+    </mirror>
+
+    <mirror>
+      <id>en-mirror</id>
+      <mirrorOf>central,google,jitpack</mirrorOf>
+      <name>EN Mirror Gradle Repository</name>
+      <url>https://en-mirror.ir</url>
+    </mirror>
+
+    <!-- Chinese Maven Mirrors (Secondary) -->
+    <mirror>
+      <id>aliyun-central</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Aliyun Central</name>
+      <url>https://maven.aliyun.com/repository/central</url>
+    </mirror>
+
+    <mirror>
+      <id>huaweicloud-central</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Huawei Cloud Central</name>
+      <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+    </mirror>
+
+    <mirror>
+      <id>tencent-central</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Tencent Cloud Central</name>
+      <url>https://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
+    </mirror>
+
+    <!-- Original Repositories (Fallback) -->
+    <mirror>
+      <id>google-maven-central</id>
+      <mirrorOf>google</mirrorOf>
+      <name>Google Maven Central</name>
+      <url>https://maven.google.com/</url>
+    </mirror>
+
+    <mirror>
+      <id>gradle-plugin-portal</id>
+      <mirrorOf>gradle-plugin-portal</mirrorOf>
+      <name>Gradle Plugin Portal</name>
+      <url>https://plugins.gradle.org/m2/</url>
+    </mirror>
+
+    <!-- JCenter (if still needed) -->
+    <mirror>
+      <id>jcenter</id>
+      <mirrorOf>jcenter</mirrorOf>
+      <name>JCenter</name>
+      <url>https://jcenter.bintray.com/</url>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <profile>
+      <id>iran-development</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <!-- Iranian Mirrors (Primary) -->
+        <repository>
+          <id>myket-maven</id>
+          <name>Myket Maven Repository</name>
+          <url>https://maven.myket.ir</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>en-mirror</id>
+          <name>EN Mirror Gradle Repository</name>
+          <url>https://en-mirror.ir</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+
+        <!-- Chinese Mirrors (Secondary) -->
+        <repository>
+          <id>aliyun-central</id>
+          <name>Aliyun Central</name>
+          <url>https://maven.aliyun.com/repository/central</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+
+        <!-- Original Repositories (Fallback) -->
+        <repository>
+          <id>google-maven</id>
+          <name>Google Maven</name>
+          <url>https://maven.google.com/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>gradle-plugin-portal</id>
+          <name>Gradle Plugin Portal</name>
+          <url>https://plugins.gradle.org/m2/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <!-- Iranian Mirrors (Primary) -->
+        <pluginRepository>
+          <id>myket-maven</id>
+          <name>Myket Maven Repository</name>
+          <url>https://maven.myket.ir</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>en-mirror</id>
+          <name>EN Mirror Gradle Repository</name>
+          <url>https://en-mirror.ir</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+
+        <!-- Chinese Mirrors (Secondary) -->
+        <pluginRepository>
+          <id>aliyun-central</id>
+          <name>Aliyun Central</name>
+          <url>https://maven.aliyun.com/repository/central</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+
+        <!-- Original Repositories (Fallback) -->
+        <pluginRepository>
+          <id>gradle-plugin-portal</id>
+          <name>Gradle Plugin Portal</name>
+          <url>https://plugins.gradle.org/m2/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>iran-development</activeProfile>
+  </activeProfiles>
+</settings>

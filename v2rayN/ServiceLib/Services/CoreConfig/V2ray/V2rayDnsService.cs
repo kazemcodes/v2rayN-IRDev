@@ -86,7 +86,7 @@ public partial class CoreConfigV2rayService
             var dnsServer = new DnsServer4Ray
             {
                 address = dnsAddress,
-                skipFallback = true,
+                skipFallback = false, // Allow fallback for sanctions bypass
                 domains = domains.Count > 0 ? domains : null,
                 expectedIPs = expectedIPs?.Count > 0 ? expectedIPs : null
             };
@@ -94,6 +94,54 @@ public partial class CoreConfigV2rayService
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
+        }
+
+        // Check for sanctions bypass and transparent mirroring
+        var sanctionsBypassService = new SanctionsBypassService();
+        var transparentMirrorService = new TransparentMirrorService();
+
+        var shouldUseBypass = await sanctionsBypassService.ShouldUseSanctionsBypassAsync();
+        var shouldUseMirroring = await transparentMirrorService.ShouldEnableTransparentMirroringAsync();
+
+        if (shouldUseBypass || shouldUseMirroring)
+        {
+            // Use Iranian DNS servers for Google domains
+            var iranianDnsServers = sanctionsBypassService.GetIranianDnsServers();
+
+            // Create DNS servers with Iranian fallbacks
+            foreach (var iranianDns in iranianDnsServers)
+            {
+                var dnsServer = new DnsServer4Ray
+                {
+                    address = iranianDns.Value,
+                    skipFallback = false,
+                    tag = iranianDns.Key,
+                    domains = new List<string>
+                    {
+                        "domain:gradle.org",
+                        "domain:services.gradle.org",
+                        "domain:maven.google.com",
+                        "domain:dl.google.com",
+                        "domain:repo.maven.apache.org",
+                        "domain:repo1.maven.org",
+                        "domain:central.sonatype.org",
+                        "domain:oss.sonatype.org",
+                        "domain:plugins.gradle.org",
+                        "domain:jcenter.bintray.com",
+                        "domain:bintray.com",
+                        "domain:developer.android.com",
+                        "domain:firebase.google.com",
+                        "domain:firebase.googleapis.com",
+                        "domain:firebasestorage.googleapis.com",
+                        "domain:googleapis.com"
+                    }
+                };
+
+                v2rayConfig.dns.servers.Add(JsonUtils.SerializeToNode(dnsServer, new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                }));
+            }
         }
 
         var directDNSAddress = ParseDnsAddresses(simpleDNSItem?.DirectDNS, Global.DomainDirectDNSAddress.FirstOrDefault());

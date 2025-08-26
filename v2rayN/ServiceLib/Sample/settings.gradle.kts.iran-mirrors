@@ -1,0 +1,49 @@
+// settings.gradle.kts for Iranian Android Development
+// Place this file in your project's root directory
+
+pluginManagement {
+    repositories {
+        // Iranian Mirrors (Primary - Fast and local)
+        maven("https://maven.myket.ir")
+        maven("https://en-mirror.ir")
+
+        // Chinese Mirrors (Secondary - Fast international)
+        maven("https://maven.aliyun.com/repository/central")
+        maven("https://mirrors.huaweicloud.com/repository/maven/")
+
+        // Original repositories (Fallback)
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // Iranian Mirrors (Primary - Fast and local)
+        maven("https://maven.myket.ir")
+        maven("https://en-mirror.ir")
+
+        // Chinese Mirrors (Secondary - Fast international)
+        maven("https://maven.aliyun.com/repository/central")
+        maven("https://mirrors.huaweicloud.com/repository/maven/")
+        maven("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
+
+        // Original repositories (Fallback)
+        google()
+        mavenCentral()
+        maven("https://plugins.gradle.org/m2/")
+    }
+}
+
+// Optional: Configure proxy for all HTTP requests
+gradle.startParameter.isOffline = false
+
+// Configure build cache for faster builds
+buildCache {
+    local {
+        isEnabled = true
+        isPush = true
+    }
+}

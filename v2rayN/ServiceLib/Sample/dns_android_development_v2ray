@@ -1,0 +1,204 @@
+{
+  "dns": {
+    "hosts": {
+      "dns.google": "8.8.8.8",
+      "dns.alidns.com": "223.5.5.5",
+      "one.one.one.one": "1.1.1.1",
+      "gradle.org": "104.18.42.222",
+      "services.gradle.org": "104.18.42.222",
+      "maven.google.com": "142.250.72.142",
+      "dl.google.com": "142.250.72.142",
+      "repo.maven.apache.org": "151.101.1.215",
+      "repo1.maven.org": "151.101.1.215",
+      "central.sonatype.org": "52.203.14.220",
+      "oss.sonatype.org": "52.203.14.220",
+      "github.com": "140.82.112.3",
+      "api.github.com": "140.82.112.3",
+      "raw.githubusercontent.com": "185.199.108.133",
+      "plugins.jetbrains.com": "91.189.114.72",
+      "www.jetbrains.com": "91.189.114.72",
+      "stackoverflow.com": "151.101.1.69",
+      "developer.android.com": "142.250.72.142",
+      "bintray.com": "104.18.32.207",
+      "jcenter.bintray.com": "104.18.32.207",
+      "gitlab.com": "172.65.251.78",
+      "bitbucket.org": "104.192.141.1",
+      "maven.myket.ir": "185.105.238.50",
+      "en-mirror.ir": "185.97.117.37",
+      "maven.aliyun.com": "203.107.1.1",
+      "mirrors.huaweicloud.com": "111.206.227.74"
+    },
+    "servers": [
+      {
+        "address": "https://dns.google/dns-query",
+        "domains": [
+          "domain:gradle.org",
+          "domain:services.gradle.org",
+          "domain:maven.google.com",
+          "domain:dl.google.com",
+          "domain:repo.maven.apache.org",
+          "domain:repo1.maven.org",
+          "domain:central.sonatype.org",
+          "domain:oss.sonatype.org",
+          "domain:github.com",
+          "domain:api.github.com",
+          "domain:raw.githubusercontent.com",
+          "domain:plugins.jetbrains.com",
+          "domain:www.jetbrains.com",
+          "domain:stackoverflow.com",
+          "domain:developer.android.com",
+          "domain:bintray.com",
+          "domain:jcenter.bintray.com",
+          "domain:gitlab.com",
+          "domain:bitbucket.org",
+          "domain:maven.myket.ir",
+          "domain:en-mirror.ir",
+          "domain:maven.aliyun.com",
+          "domain:mirrors.huaweicloud.com"
+        ],
+        "skipFallback": false,
+        "expectIPs": [
+          "geoip:us",
+          "geoip:ca",
+          "geoip:eu"
+        ]
+      },
+      {
+        "address": "https://cloudflare-dns.com/dns-query",
+        "domains": [
+          "domain:firebase.google.com",
+          "domain:firebase.googleapis.com",
+          "domain:firebasestorage.googleapis.com",
+          "domain:googleapis.com"
+        ],
+        "skipFallback": false,
+        "expectIPs": [
+          "geoip:us",
+          "geoip:ca"
+        ]
+      },
+      {
+        "address": "https://dns.alidns.com/dns-query",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true
+      },
+      {
+        "address": "178.22.122.100",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shecan-primary"
+      },
+      {
+        "address": "185.51.200.2",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shecan-secondary"
+      },
+      {
+        "address": "10.202.10.10",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "radar-primary"
+      },
+      {
+        "address": "10.202.10.11",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "radar-secondary"
+      },
+      {
+        "address": "94.103.125.157",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shelter-primary"
+      },
+      {
+        "address": "94.103.125.158",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "shelter-secondary"
+      },
+      {
+        "address": "78.157.42.100",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "electro-primary"
+      },
+      {
+        "address": "78.157.42.101",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "electro-secondary"
+      },
+      {
+        "address": "10.202.10.202",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "403-primary"
+      },
+      {
+        "address": "10.202.10.102",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "403-secondary"
+      },
+      {
+        "address": "185.55.226.26",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "begzar-primary"
+      },
+      {
+        "address": "185.55.225.25",
+        "domains": [
+          "geosite:ir",
+          "geosite:private"
+        ],
+        "skipFallback": true,
+        "tag": "begzar-secondary"
+      },
+      "https://dns.alidns.com/dns-query"
+    ],
+    "clientIp": "auto",
+    "disableCache": false,
+    "disableFallback": false,
+    "disableFallbackIfMatch": false,
+    "queryStrategy": "UseIPv4"
+  }
+}

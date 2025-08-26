@@ -98,6 +98,7 @@ public partial class MainWindow
             this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.menuOptionSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.menuRoutingSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.menuDNSSetting).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.SanctionsBypassSettingCmd, v => v.menuSanctionsBypassSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.FullConfigTemplateCmd, v => v.menuFullConfigTemplate).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.GlobalHotkeySettingCmd, v => v.menuGlobalHotkeySetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RebootAsAdminCmd, v => v.menuRebootAsAdmin).DisposeWith(disposables);
@@ -181,6 +182,9 @@ public partial class MainWindow
 
             case EViewAction.DNSSettingWindow:
                 return (new DNSSettingWindow().ShowDialog() ?? false);
+
+            case EViewAction.SanctionsBypassSettingWindow:
+                return (new SanctionsBypassWindow().ShowDialog() ?? false);
 
             case EViewAction.RoutingSettingWindow:
                 return (new RoutingSettingWindow().ShowDialog() ?? false);

@@ -1,0 +1,106 @@
+{
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "address": "https://dns.google/dns-query",
+        "address_resolver": "local",
+        "strategy": "ipv4_only",
+        "detour": "proxy"
+      },
+      {
+        "tag": "cloudflare",
+        "address": "https://cloudflare-dns.com/dns-query",
+        "address_resolver": "local",
+        "strategy": "ipv4_only",
+        "detour": "proxy"
+      },
+      {
+        "tag": "alidns",
+        "address": "https://dns.alidns.com/dns-query",
+        "address_resolver": "local",
+        "strategy": "ipv4_only",
+        "detour": "direct"
+      },
+      {
+        "tag": "local",
+        "address": "https://dns.alidns.com/dns-query",
+        "address_resolver": "local",
+        "strategy": "ipv4_only",
+        "detour": "direct"
+      }
+    ],
+    "rules": [
+      {
+        "domain": [
+          "github.com",
+          "api.github.com",
+          "raw.githubusercontent.com",
+          "plugins.jetbrains.com",
+          "www.jetbrains.com",
+          "stackoverflow.com",
+          "developer.android.com"
+        ],
+        "server": "google",
+        "disable_cache": false
+      },
+      {
+        "domain": [
+          "firebase.google.com",
+          "firebase.googleapis.com",
+          "firebasestorage.googleapis.com",
+          "googleapis.com"
+        ],
+        "server": "cloudflare",
+        "disable_cache": false
+      },
+      {
+        "geosite": [
+          "ir",
+          "private"
+        ],
+        "server": "alidns",
+        "disable_cache": false
+      },
+      {
+        "ip_accept_any": true,
+        "server": "alidns"
+      }
+    ],
+    "final": "alidns",
+    "reverse_mapping": false,
+    "fakeip": {
+      "enabled": false,
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    },
+    "hosts": {
+      "dns.google": "8.8.8.8",
+      "dns.alidns.com": "223.5.5.5",
+      "one.one.one.one": "1.1.1.1",
+
+      "maven.google.com": "185.105.238.50",
+      "dl.google.com": "185.105.238.50",
+      "repo.maven.apache.org": "185.105.238.50",
+      "repo1.maven.org": "185.105.238.50",
+      "central.sonatype.org": "185.105.238.50",
+      "oss.sonatype.org": "185.105.238.50",
+      "gradle.org": "185.97.117.37",
+      "services.gradle.org": "185.97.117.37",
+      "plugins.gradle.org": "185.97.117.37",
+      "jcenter.bintray.com": "185.105.238.50",
+      "bintray.com": "185.105.238.50",
+
+      "github.com": "140.82.112.3",
+      "api.github.com": "140.82.112.3",
+      "raw.githubusercontent.com": "185.199.108.133",
+      "plugins.jetbrains.com": "91.189.114.72",
+      "www.jetbrains.com": "91.189.114.72",
+      "stackoverflow.com": "151.101.1.69",
+      "developer.android.com": "142.250.72.142"
+    },
+    "disable_cache": false,
+    "disable_expire": false,
+    "independent_cache": true
+  }
+}

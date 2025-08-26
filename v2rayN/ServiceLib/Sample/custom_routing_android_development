@@ -1,0 +1,209 @@
+[
+	{
+		"remarks": "Android Development - Gradle Distribution",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:gradle.org",
+			"domain:services.gradle.org",
+			"domain:gradle.com",
+			"domain:gradle.oss.sonatype.org"
+		]
+	},
+	{
+		"remarks": "Android Development - Google Maven Repository",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:maven.google.com",
+			"domain:dl.google.com",
+			"domain:developers.google.com",
+			"domain:developer.android.com",
+			"domain:android.googlesource.com",
+			"domain:android-review.googlesource.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Maven Central & Apache",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:repo.maven.apache.org",
+			"domain:repo1.maven.org",
+			"domain:central.sonatype.org",
+			"domain:oss.sonatype.org",
+			"domain:repository.apache.org",
+			"domain:downloads.apache.org"
+		]
+	},
+	{
+		"remarks": "Android Development - JCenter/Bintray",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:jcenter.bintray.com",
+			"domain:dl.bintray.com",
+			"domain:bintray.com",
+			"domain:api.bintray.com",
+			"domain:artifacts.bintray.com"
+		]
+	},
+	{
+		"remarks": "Android Development - JetBrains/IntelliJ",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:plugins.jetbrains.com",
+			"domain:www.jetbrains.com",
+			"domain:cache-redirector.jetbrains.com",
+			"domain:download.jetbrains.com",
+			"domain:download-cf.jetbrains.com"
+		]
+	},
+	{
+		"remarks": "Android Development - GitHub",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:github.com",
+			"domain:api.github.com",
+			"domain:raw.githubusercontent.com",
+			"domain:objects.githubusercontent.com",
+			"domain:codeload.github.com",
+			"domain:githubusercontent.com"
+		]
+	},
+	{
+		"remarks": "Android Development - GitLab",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:gitlab.com",
+			"domain:registry.gitlab.com",
+			"domain:about.gitlab.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Bitbucket",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:bitbucket.org",
+			"domain:api.bitbucket.org",
+			"domain:bitbucket.atlassian.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Cloudflare CDN",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:cdnjs.cloudflare.com",
+			"domain:fonts.googleapis.com",
+			"domain:ajax.googleapis.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Firebase & Google Services",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:firebase.google.com",
+			"domain:firebase.googleapis.com",
+			"domain:firebasestorage.googleapis.com",
+			"domain:googleapis.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Iranian Mirrors",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:maven.myket.ir",
+			"domain:en-mirror.ir",
+			"domain:maven.google.com",
+			"domain:dl.google.com",
+			"domain:repo.maven.apache.org",
+			"domain:repo1.maven.org",
+			"domain:central.sonatype.org",
+			"domain:gradle.org",
+			"domain:services.gradle.org",
+			"domain:plugins.gradle.org"
+		]
+	},
+	{
+		"remarks": "Android Development - SDK Tools",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:androiddevtools.cn",
+			"domain:mirrors.neusoft.edu.cn",
+			"domain:mirrors.cloud.tencent.com",
+			"domain:mirrors.huaweicloud.com",
+			"domain:maven.aliyun.com",
+			"domain:mirrors.huaweicloud.com"
+		]
+	},
+	{
+		"remarks": "Android Development - Stack Overflow & Documentation",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:stackoverflow.com",
+			"domain:stackexchange.com",
+			"domain:superuser.com",
+			"domain:serverfault.com"
+		]
+	},
+	{
+		"remarks": "Android Development - DNS & Network Tools",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:dns.google",
+			"domain:cloudflare-dns.com",
+			"domain:one.one.one.one"
+		]
+	},
+	{
+		"remarks": "Android Development - Version Control",
+		"outboundTag": "proxy",
+		"domain": [
+			"domain:git-scm.com",
+			"domain:gitforwindows.org",
+			"domain:git-lfs.github.com"
+		]
+	},
+	{
+		"remarks": "Block Bittorrent",
+		"outboundTag": "block",
+		"protocol": [
+			"bittorrent"
+		]
+	},
+	{
+		"remarks": "Block UDP 443",
+		"outboundTag": "block",
+		"port": "443",
+		"network": "udp"
+	},
+	{
+		"remarks": "Bypass Private Networks",
+		"outboundTag": "direct",
+		"ip": [
+			"geoip:private"
+		]
+	},
+	{
+		"remarks": "Bypass Private Domains",
+		"outboundTag": "direct",
+		"domain": [
+			"geosite:private"
+		]
+	},
+	{
+		"remarks": "Bypass Iran",
+		"outboundTag": "direct",
+		"domain": [
+			"geosite:ir"
+		]
+	},
+	{
+		"remarks": "Bypass Iran IP",
+		"outboundTag": "direct",
+		"ip": [
+			"geoip:ir"
+		]
+	},
+	{
+		"remarks": "Final Proxy Rule",
+		"port": "0-65535",
+		"outboundTag": "proxy"
+	}
+]
