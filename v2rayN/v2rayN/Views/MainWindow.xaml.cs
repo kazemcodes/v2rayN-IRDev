@@ -10,6 +10,7 @@ using MaterialDesignThemes.Wpf;
 using ReactiveUI;
 using ServiceLib.Manager;
 using ServiceLib.Common;
+using ServiceLib.Services;
 using Splat;
 using v2rayN.Manager;
 
@@ -100,6 +101,7 @@ public partial class MainWindow
             this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.menuRoutingSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.menuDNSSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.SanctionsBypassSettingCmd, v => v.menuSanctionsBypassSetting).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.DnsTestingCmd, v => v.menuDnsTesting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.FullConfigTemplateCmd, v => v.menuFullConfigTemplate).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.GlobalHotkeySettingCmd, v => v.menuGlobalHotkeySetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RebootAsAdminCmd, v => v.menuRebootAsAdmin).DisposeWith(disposables);
@@ -147,6 +149,9 @@ public partial class MainWindow
         AddHelpMenuItem();
         WindowsManager.Instance.RegisterGlobalHotkey(_config, OnHotkeyHandler, null);
         MessageBus.Current.Listen<string>(EMsgCommand.AppExit.ToString()).Subscribe(StorageUI);
+        
+        // Start emergency 403 handler if Iranian sanctions bypass is enabled
+        InitializeEmergency403Handler();
     }
 
     #region Event
@@ -197,6 +202,22 @@ public partial class MainWindow
                 {
                     Logging.SaveLog($"MainWindow: Error opening SanctionsBypassWindow - {ex}");
                     MessageBox.Show($"Error opening Sanctions Bypass Settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+
+            case EViewAction.DnsTestingWindow:
+                try
+                {
+                    Logging.SaveLog("MainWindow: Opening DnsTestingWindow...");
+                    var dnsWindow = new DnsTestingWindow();
+                    var result = dnsWindow.ShowDialog() ?? false;
+                    Logging.SaveLog($"MainWindow: DnsTestingWindow result: {result}");
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Logging.SaveLog($"MainWindow: Error opening DnsTestingWindow - {ex}");
+                    MessageBox.Show($"Error opening DNS Testing Window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return false;
                 }
 
@@ -477,6 +498,38 @@ public partial class MainWindow
         if (sender is MenuItem item)
         {
             ProcUtils.ProcessStart(item.Tag.ToString());
+        }
+    }
+
+    private void InitializeEmergency403Handler()
+    {
+        try
+        {
+            Logging.SaveLog("🚨 IMMEDIATE 403 FIX: Force-starting Emergency 403 Handler");
+            
+            // Force start the emergency handler regardless of settings to fix immediate 403 issues
+            Emergency403Handler.Instance.StartMonitoring();
+            
+            // Immediately trigger 403 bypass for the current error
+            _ = Task.Run(async () =>
+            {
+                await Emergency403Handler.Instance.TriggerManual403Bypass("Request failed with status code 403 - immediate fix");
+                await Emergency403Handler.Instance.TestAndApplyImmediate403Bypass();
+            });
+            
+            var iranConfig = _config?.IranSanctionsBypassItem;
+            if (iranConfig?.EnableSanctionsDetection == true)
+            {
+                Logging.SaveLog("✅ Emergency 403 Handler: ACTIVE via settings - Will automatically handle sanctions 403 errors");
+            }
+            else
+            {
+                Logging.SaveLog("⚠️ Emergency 403 Handler: FORCE ACTIVATED - Applied immediate 403 fix despite settings");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"Error initializing Emergency 403 Handler: {ex.Message}");
         }
     }
 

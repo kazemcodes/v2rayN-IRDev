@@ -80,13 +80,29 @@ public partial class SanctionsBypassWindow : WindowBase<SanctionsBypassViewModel
         }
     }
 
-    private void SaveConfiguration()
+    private async void SaveConfiguration()
     {
         try
         {
+            // Disable the save button to prevent multiple clicks
+            btnSave.IsEnabled = false;
+            btnSave.Content = "Saving...";
+            
+            Logging.SaveLog("SanctionsBypassWindow: STARTING SAVE OPERATION...");
+            
             if (_config.IranSanctionsBypassItem == null)
+            {
                 _config.IranSanctionsBypassItem = new ServiceLib.Models.IranSanctionsBypassItem();
+                Logging.SaveLog("SanctionsBypassWindow: Created new IranSanctionsBypassItem");
+            }
 
+            // Validate input values before saving
+            if (!ValidateConfiguration())
+            {
+                return; // Validation failed, button will be re-enabled in finally block
+            }
+
+            // Save all settings with debug logging
             _config.IranSanctionsBypassItem.EnableSanctionsDetection = ViewModel.EnableSanctionsDetection;
             _config.IranSanctionsBypassItem.EnableIranianDnsAutoSwitch = ViewModel.EnableIranianDnsAutoSwitch;
             _config.IranSanctionsBypassItem.EnableTransparentMirroring = ViewModel.EnableTransparentMirroring;
@@ -94,23 +110,105 @@ public partial class SanctionsBypassWindow : WindowBase<SanctionsBypassViewModel
             _config.IranSanctionsBypassItem.AutoUpdateBlockedDomainsList = ViewModel.AutoUpdateBlockedDomainsList;
             _config.IranSanctionsBypassItem.PreferredIranianDnsServer = ViewModel.PreferredIranianDnsServer;
 
-            if (int.TryParse(ViewModel.SanctionsCheckIntervalMinutes, out var interval))
+            Logging.SaveLog($"SanctionsBypassWindow: SAVING SETTINGS - " +
+                $"Detection:{ViewModel.EnableSanctionsDetection}, " +
+                $"DNS:{ViewModel.EnableIranianDnsAutoSwitch}, " +
+                $"Mirroring:{ViewModel.EnableTransparentMirroring}, " +
+                $"DNS Server:{ViewModel.PreferredIranianDnsServer}");
+
+            if (int.TryParse(ViewModel.SanctionsCheckIntervalMinutes, out var interval) && interval > 0)
                 _config.IranSanctionsBypassItem.SanctionsCheckIntervalMinutes = interval;
 
-            if (int.TryParse(ViewModel.DnsTimeoutSeconds, out var timeout))
+            if (int.TryParse(ViewModel.DnsTimeoutSeconds, out var timeout) && timeout > 0)
                 _config.IranSanctionsBypassItem.DnsTimeoutSeconds = timeout;
 
-            ConfigHandler.SaveConfig(_config);
-            Logging.SaveLog("SanctionsBypassWindow: Configuration saved successfully");
-
-            DialogResult = true;
-            Close();
+            // Use ConfigureAwait(false) to prevent deadlock in UI context
+            Logging.SaveLog("SanctionsBypassWindow: Starting async save with 15 second timeout...");
+            
+            using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            
+            try
+            {
+                var saveResult = await ConfigHandler.SaveConfig(_config).ConfigureAwait(false);
+                
+                // Use Dispatcher.Invoke for UI updates after async operation
+                Dispatcher.Invoke(() =>
+                {
+                    Logging.SaveLog($"SanctionsBypassWindow: SaveConfig completed successfully with result: {saveResult}");
+                    if (saveResult == 0)
+                    {
+                        DialogResult = true;
+                        Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to save configuration. Please try again.", "Save Error", 
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                Logging.SaveLog("SanctionsBypassWindow: Save operation timed out after 15 seconds");
+                Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show("Configuration save operation timed out. Please try again.", "Timeout", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                });
+            }
         }
         catch (Exception ex)
         {
             Logging.SaveLog($"SanctionsBypassWindow: Error saving configuration - {ex.Message}");
-            MessageBox.Show($"Error saving configuration: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Logging.SaveLog($"SanctionsBypassWindow: Exception details - {ex}");
+            
+            Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show($"Error saving configuration: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            });
         }
+        finally
+        {
+            // Ensure button is re-enabled on UI thread
+            Dispatcher.Invoke(() =>
+            {
+                if (btnSave != null)
+                {
+                    btnSave.IsEnabled = true;
+                    if (btnSave.Content.ToString() == "Saving...")
+                        btnSave.Content = "Save";
+                }
+            });
+        }
+    }
+
+    private bool ValidateConfiguration()
+    {
+        // Validate numeric inputs
+        if (!int.TryParse(ViewModel.SanctionsCheckIntervalMinutes, out var interval) || interval <= 0)
+        {
+            MessageBox.Show("Sanctions check interval must be a positive number.", "Validation Error", 
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!int.TryParse(ViewModel.DnsTimeoutSeconds, out var timeout) || timeout <= 0)
+        {
+            MessageBox.Show("DNS timeout must be a positive number.", "Validation Error", 
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        // Validate DNS server selection
+        if (string.IsNullOrWhiteSpace(ViewModel.PreferredIranianDnsServer))
+        {
+            MessageBox.Show("Please select a preferred Iranian DNS server.", "Validation Error", 
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
     }
 }
 

@@ -9,6 +9,9 @@ public class TransparentMirrorService
     private readonly HttpClient _httpClient;
     private readonly Dictionary<string, string> _mirrorMappings;
     private bool _isEnabled;
+    private string _primaryMirror = "maven.myket.ir";
+    private List<string> _fallbackMirrors = new();
+    private bool _enableFallbackToGoogle = false;
 
     public TransparentMirrorService()
     {
@@ -188,16 +191,25 @@ public class TransparentMirrorService
     {
         try
         {
-            // This would enable transparent mirroring in the VPN configuration
-            Logging.SaveLog("TransparentMirrorService: Enabling transparent mirroring");
+            Logging.SaveLog("TransparentMirrorService: Enabling transparent mirroring for Iranian developers");
 
-            // TODO: Implement actual transparent mirroring setup
-            // This could involve:
-            // 1. Setting up DNS rules for repository domains
-            // 2. Configuring routing rules for mirrors
-            // 3. Enabling host file modifications
+            // Test and select the best working mirrors
+            var workingMirrors = await TestAndSelectBestMirrorsAsync();
+            
+            if (workingMirrors.Count == 0)
+            {
+                Logging.SaveLog("TransparentMirrorService: No working mirrors found, enabling fallback to Google repos with Iranian DNS");
+                _enableFallbackToGoogle = true;
+            }
+            else
+            {
+                Logging.SaveLog($"TransparentMirrorService: Found {workingMirrors.Count} working mirrors, transparent mirroring enabled");
+                _primaryMirror = workingMirrors.First();
+                _fallbackMirrors = workingMirrors.Skip(1).ToList();
+            }
 
-            await Task.CompletedTask;
+            // The actual DNS and routing configuration is applied by V2rayDnsService
+            Logging.SaveLog("TransparentMirrorService: Transparent mirroring configuration completed");
         }
         catch (Exception ex)
         {
@@ -205,4 +217,78 @@ public class TransparentMirrorService
             throw;
         }
     }
+
+    /// <summary>
+    /// Test all available mirrors and select the best performing ones
+    /// </summary>
+    private async Task<List<string>> TestAndSelectBestMirrorsAsync()
+    {
+        var mirrors = new List<(string Name, long ResponseTime)>();
+        var testUrls = new Dictionary<string, string>
+        {
+            ["maven.myket.ir"] = "https://maven.myket.ir/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.pom",
+            ["en-mirror.ir"] = "https://en-mirror.ir/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.pom",
+            ["maven.aliyun.com"] = "https://maven.aliyun.com/repository/central/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.pom",
+            ["mirrors.huaweicloud.com"] = "https://mirrors.huaweicloud.com/repository/maven/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.pom",
+            ["mirrors.cloud.tencent.com"] = "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/androidx/appcompat/appcompat/1.4.2/appcompat-1.4.2.pom"
+        };
+
+        foreach (var mirror in testUrls)
+        {
+            try
+            {
+                Logging.SaveLog($"Testing mirror: {mirror.Key}");
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                
+                var response = await _httpClient.GetAsync(mirror.Value, HttpCompletionOption.ResponseHeadersRead);
+                stopwatch.Stop();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    mirrors.Add((mirror.Key, stopwatch.ElapsedMilliseconds));
+                    Logging.SaveLog($"Mirror {mirror.Key}: ✅ Working ({stopwatch.ElapsedMilliseconds}ms)");
+                }
+                else
+                {
+                    Logging.SaveLog($"Mirror {mirror.Key}: ❌ Failed with {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.SaveLog($"Mirror {mirror.Key}: ❌ Exception: {ex.Message}");
+            }
+        }
+
+        // Sort by response time (fastest first)
+        var workingMirrors = mirrors
+            .OrderBy(m => m.ResponseTime)
+            .Select(m => m.Name)
+            .ToList();
+
+        if (workingMirrors.Count > 0)
+        {
+            Logging.SaveLog($"Best mirrors (sorted by speed): {string.Join(" → ", workingMirrors)}");
+        }
+        else
+        {
+            Logging.SaveLog("⚠️ No mirrors are working, will use fallback to Google repos with Iranian DNS");
+        }
+
+        return workingMirrors;
+    }
+
+    /// <summary>
+    /// Get the current primary mirror for use by other services
+    /// </summary>
+    public string GetPrimaryMirror() => _primaryMirror;
+
+    /// <summary>
+    /// Get all fallback mirrors
+    /// </summary>
+    public List<string> GetFallbackMirrors() => _fallbackMirrors;
+
+    /// <summary>
+    /// Check if fallback to Google repos is enabled
+    /// </summary>
+    public bool ShouldFallbackToGoogle() => _enableFallbackToGoogle;
 }

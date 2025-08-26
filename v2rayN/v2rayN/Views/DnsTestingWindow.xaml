@@ -1,0 +1,131 @@
+<base:WindowBase
+    x:Class="v2rayN.Views.DnsTestingWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:base="clr-namespace:v2rayN.Base"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    Title="Iranian DNS Testing and Optimization"
+    Width="900"
+    Height="700"
+    x:TypeArguments="vms:SanctionsBypassViewModel"
+    ShowInTaskbar="False"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    
+    <DockPanel Margin="8">
+        
+        <!-- Header Section -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <TextBlock 
+                Text="🚀 Iranian DNS Testing &amp; Optimization Center"
+                FontSize="20"
+                FontWeight="Bold"
+                HorizontalAlignment="Center"
+                Foreground="DarkBlue" />
+            <TextBlock 
+                Text="Test all 60 Iranian DNS servers and automatically select the fastest one"
+                FontSize="14"
+                HorizontalAlignment="Center"
+                Margin="0,8,0,0"
+                Foreground="Gray" />
+        </StackPanel>
+        
+        <!-- Button Panel -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
+            <Button x:Name="btnTestAllDns" 
+                    Content="🔍 Test All DNS Servers" 
+                    Margin="0,0,8,0"
+                    Padding="16,8"
+                    Background="LightBlue"
+                    Click="BtnTestAllDns_Click" />
+            <Button x:Name="btnStopTest" 
+                    Content="⏹️ Stop Testing" 
+                    Margin="8,0,8,0"
+                    Padding="16,8"
+                    Background="Orange"
+                    IsEnabled="False"
+                    Click="BtnStopTest_Click" />
+            <Button x:Name="btnApplyOptimal" 
+                    Content="✅ Apply Optimal DNS" 
+                    Margin="8,0,0,0"
+                    Padding="16,8"
+                    Background="LightGreen"
+                    IsEnabled="False"
+                    Click="BtnApplyOptimal_Click" />
+        </StackPanel>
+        
+        <!-- Progress Section -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16" x:Name="progressPanel" Visibility="Collapsed">
+            <TextBlock x:Name="txtProgress" 
+                       Text="Preparing DNS testing..."
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8" />
+            <ProgressBar x:Name="progressBar" 
+                         Height="6"
+                         IsIndeterminate="False"
+                         Value="0"
+                         Maximum="65" />
+        </StackPanel>
+        
+        <!-- Results Section -->
+        <GroupBox Header="🎯 DNS Test Results" Margin="0,0,0,8">
+            <DockPanel>
+                
+                <!-- Summary Panel -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
+                    <TextBlock x:Name="txtTotalTested" Text="Total: 0" Margin="0,0,16,0" FontSize="12" FontWeight="Bold" />
+                    <TextBlock x:Name="txtWorkingCount" Text="Working: 0" Margin="0,0,16,0" FontSize="12" FontWeight="Bold" Foreground="Green" />
+                    <TextBlock x:Name="txtFailedCount" Text="Failed: 0" Margin="0,0,16,0" FontSize="12" FontWeight="Bold" Foreground="Red" />
+                    <TextBlock x:Name="txtOptimalDns" Text="Optimal: Not selected" FontSize="12" FontWeight="Bold" Foreground="Blue" />
+                </StackPanel>
+                
+                <!-- Results DataGrid -->
+                <DataGrid x:Name="dgResults"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserReorderColumns="True"
+                          CanUserResizeColumns="True"
+                          CanUserSortColumns="True"
+                          IsReadOnly="True"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="🏆 Rank" Binding="{Binding Rank}" Width="60" />
+                        <DataGridTextColumn Header="📡 DNS Name" Binding="{Binding Name}" Width="140" />
+                        <DataGridTextColumn Header="🌐 IP Address" Binding="{Binding IpAddress}" Width="120" />
+                        <DataGridTextColumn Header="⚡ Response (ms)" Binding="{Binding ResponseTime}" Width="100" />
+                        <DataGridTextColumn Header="✅ Success Rate" Binding="{Binding SuccessRate}" Width="100" />
+                        <DataGridTextColumn Header="🎯 Tests Passed" Binding="{Binding TestsPassed}" Width="100" />
+                        <DataGridTextColumn Header="📊 Tier" Binding="{Binding Tier}" Width="140" />
+                        <DataGridTextColumn Header="✅ Status" Binding="{Binding Status}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+            </DockPanel>
+        </GroupBox>
+        
+        <!-- Log Section -->
+        <GroupBox Header="📋 Real-time Testing Log">
+            <ScrollViewer x:Name="logScrollViewer" VerticalScrollBarVisibility="Auto">
+                <TextBox x:Name="txtLog"
+                         Text="Ready to test Iranian DNS servers..."
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         VerticalAlignment="Stretch"
+                         MinHeight="200"
+                         FontFamily="Consolas"
+                         FontSize="11"
+                         Background="Black"
+                         Foreground="LimeGreen" />
+            </ScrollViewer>
+        </GroupBox>
+        
+    </DockPanel>
+</base:WindowBase>

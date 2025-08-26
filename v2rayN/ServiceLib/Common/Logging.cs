@@ -35,7 +35,50 @@ public class Logging
             return;
         }
 
+        // Format the log entry with timestamp and category
+        var formattedContent = FormatLogEntry(strContent);
+
+        // Also output to console for immediate visibility in V2Ray logs
+        Console.WriteLine(formattedContent);
+
         _logger1.Info(strContent);
+    }
+
+    /// <summary>
+    /// Format log entry with proper categorization and emojis
+    /// </summary>
+    private static string FormatLogEntry(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return content;
+
+        var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+        
+        // Categorize and format based on content
+        if (content.Contains("🚨") || content.Contains("403") || content.Contains("ERROR"))
+        {
+            return $"[{timestamp}] [EMERGENCY] {content}";
+        }
+        else if (content.Contains("✅") || content.Contains("SUCCESS"))
+        {
+            return $"[{timestamp}] [SUCCESS] {content}";
+        }
+        else if (content.Contains("⚠️") || content.Contains("WARNING"))
+        {
+            return $"[{timestamp}] [WARNING] {content}";
+        }
+        else if (content.Contains("🔄") || content.Contains("DNS") || content.Contains("RELOAD"))
+        {
+            return $"[{timestamp}] [CONFIG] {content}";
+        }
+        else if (content.Contains("IRAN-BYPASS") || content.Contains("SanctionsBypass"))
+        {
+            return $"[{timestamp}] [SANCTIONS] {content}";
+        }
+        else
+        {
+            return $"[{timestamp}] [INFO] {content}";
+        }
     }
 
     public static void SaveLog(string strTitle, Exception ex)

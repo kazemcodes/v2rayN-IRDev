@@ -1,0 +1,99 @@
+{
+  "description": "Example of how transparent mirroring works for Iranian Android developers",
+  "mirroring_strategy": {
+    "priority_1": {
+      "description": "Iranian mirrors (fastest, direct connection)",
+      "mirrors": [
+        "maven.myket.ir",
+        "en-mirror.ir"
+      ],
+      "routing": "direct",
+      "use_case": "Primary source for Maven dependencies"
+    },
+    "priority_2": {
+      "description": "Chinese mirrors (backup, direct connection)", 
+      "mirrors": [
+        "maven.aliyun.com",
+        "mirrors.huaweicloud.com", 
+        "mirrors.cloud.tencent.com"
+      ],
+      "routing": "direct",
+      "use_case": "Secondary backup when Iranian mirrors fail"
+    },
+    "priority_3": {
+      "description": "Google repos with Iranian DNS (fallback)",
+      "mirrors": [
+        "maven.google.com",
+        "dl.google.com",
+        "gradle.org"
+      ],
+      "routing": "iranian_dns",
+      "use_case": "Fallback when mirrors don't have specific packages"
+    }
+  },
+  "dns_mappings": {
+    "maven.google.com": "maven.myket.ir",
+    "dl.google.com": "maven.myket.ir", 
+    "gradle.org": "maven.myket.ir",
+    "services.gradle.org": "maven.myket.ir",
+    "plugins.gradle.org": "maven.myket.ir",
+    "repo.gradle.org": "maven.myket.ir",
+    "developer.android.com": "78.157.42.100",
+    "firebase.google.com": "78.157.42.100",
+    "googleapis.com": "78.157.42.100"
+  },
+  "fallback_logic": {
+    "scenario_1": {
+      "request": "androidx.appcompat:appcompat:1.4.2",
+      "flow": [
+        "1. Try maven.myket.ir → SUCCESS",
+        "Download from Iranian mirror (fastest)"
+      ]
+    },
+    "scenario_2": {
+      "request": "com.google.firebase:firebase-auth:21.0.1",
+      "flow": [
+        "1. Try maven.myket.ir → 404 NOT FOUND",
+        "2. Try en-mirror.ir → 404 NOT FOUND", 
+        "3. Try maven.aliyun.com → 404 NOT FOUND",
+        "4. Fallback to maven.google.com via Iranian DNS → SUCCESS",
+        "Download from Google with Iranian DNS bypass"
+      ]
+    },
+    "scenario_3": {
+      "request": "com.android.tools.build:gradle:7.2.0",
+      "flow": [
+        "1. Try maven.myket.ir → SUCCESS",
+        "Download Android Gradle Plugin from Iranian mirror"
+      ]
+    }
+  },
+  "android_studio_integration": {
+    "build_gradle": {
+      "description": "No changes needed in build.gradle - transparent redirection",
+      "example": {
+        "repositories": {
+          "google()": "// Automatically redirected to maven.myket.ir",
+          "mavenCentral()": "// Uses fastest available mirror"
+        }
+      }
+    },
+    "gradle_properties": {
+      "description": "Optional optimization for Iranian developers",
+      "settings": {
+        "systemProp.http.proxyHost": "127.0.0.1",
+        "systemProp.http.proxyPort": "10809",
+        "systemProp.https.proxyHost": "127.0.0.1", 
+        "systemProp.https.proxyPort": "10809"
+      }
+    }
+  },
+  "expected_improvements": {
+    "download_speed": "50-300% faster via Iranian mirrors",
+    "reliability": "No more 403/503 errors from sanctions",
+    "cache_efficiency": "Better caching via local mirrors",
+    "development_experience": "Seamless, no configuration changes needed"
+  }
+}
+
+

@@ -28,6 +28,7 @@ public enum EViewAction
     AddServer2Window,
     DNSSettingWindow,
     SanctionsBypassSettingWindow,
+    DnsTestingWindow,
     RoutingSettingWindow,
     OptionSettingWindow,
     FullConfigTemplateWindow,

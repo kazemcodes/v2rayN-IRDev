@@ -40,6 +40,7 @@ public class MainWindowViewModel : MyReactiveObject
     public ReactiveCommand<Unit, Unit> RoutingSettingCmd { get; }
     public ReactiveCommand<Unit, Unit> DNSSettingCmd { get; }
     public ReactiveCommand<Unit, Unit> SanctionsBypassSettingCmd { get; }
+    public ReactiveCommand<Unit, Unit> DnsTestingCmd { get; }
     public ReactiveCommand<Unit, Unit> FullConfigTemplateCmd { get; }
     public ReactiveCommand<Unit, Unit> GlobalHotkeySettingCmd { get; }
     public ReactiveCommand<Unit, Unit> RebootAsAdminCmd { get; }
@@ -174,6 +175,10 @@ public class MainWindowViewModel : MyReactiveObject
         SanctionsBypassSettingCmd = ReactiveCommand.CreateFromTask(async () =>
         {
             await SanctionsBypassSettingAsync();
+        });
+        DnsTestingCmd = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await DnsTestingAsync();
         });
         FullConfigTemplateCmd = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -522,6 +527,15 @@ public class MainWindowViewModel : MyReactiveObject
     private async Task SanctionsBypassSettingAsync()
     {
         var ret = await _updateView?.Invoke(EViewAction.SanctionsBypassSettingWindow, null);
+        if (ret == true)
+        {
+            await Reload();
+        }
+    }
+
+    private async Task DnsTestingAsync()
+    {
+        var ret = await _updateView?.Invoke(EViewAction.DnsTestingWindow, null);
         if (ret == true)
         {
             await Reload();

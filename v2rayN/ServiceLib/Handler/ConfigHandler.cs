@@ -114,6 +114,32 @@ public static class ConfigHandler
 
         config.SimpleDNSItem ??= InitBuiltinSimpleDNS();
 
+        config.IranSanctionsBypassItem ??= new()
+        {
+            EnableSanctionsDetection = true,
+            EnableIranianDnsAutoSwitch = true,
+            EnableTransparentMirroring = true,
+            EnableHardBlockOnFailure = false,
+            AutoUpdateBlockedDomainsList = true,
+            PreferredIranianDnsServer = "electro-primary",
+            SanctionsCheckIntervalMinutes = 30,
+            DnsTimeoutSeconds = 5
+        };
+
+        // Debug logging for IranSanctionsBypassItem loading
+        if (config.IranSanctionsBypassItem != null)
+        {
+            Logging.SaveLog($"ConfigHandler: Loaded IranSanctionsBypassItem - " +
+                $"Detection:{config.IranSanctionsBypassItem.EnableSanctionsDetection}, " +
+                $"DNS:{config.IranSanctionsBypassItem.EnableIranianDnsAutoSwitch}, " +
+                $"Mirroring:{config.IranSanctionsBypassItem.EnableTransparentMirroring}, " +
+                $"DNS Server:{config.IranSanctionsBypassItem.PreferredIranianDnsServer}");
+        }
+        else
+        {
+            Logging.SaveLog("ConfigHandler: IranSanctionsBypassItem is NULL after initialization!");
+        }
+
         config.SpeedTestItem ??= new();
         if (config.SpeedTestItem.SpeedTestTimeout < 10)
         {
@@ -180,6 +206,20 @@ public static class ConfigHandler
     {
         try
         {
+            // Debug logging for IranSanctionsBypassItem
+            if (config.IranSanctionsBypassItem != null)
+            {
+                Logging.SaveLog($"ConfigHandler: Saving IranSanctionsBypassItem - " +
+                    $"Detection:{config.IranSanctionsBypassItem.EnableSanctionsDetection}, " +
+                    $"DNS:{config.IranSanctionsBypassItem.EnableIranianDnsAutoSwitch}, " +
+                    $"Mirroring:{config.IranSanctionsBypassItem.EnableTransparentMirroring}, " +
+                    $"DNS Server:{config.IranSanctionsBypassItem.PreferredIranianDnsServer}");
+            }
+            else
+            {
+                Logging.SaveLog("ConfigHandler: IranSanctionsBypassItem is NULL when saving!");
+            }
+
             //save temp file
             var resPath = Utils.GetConfigPath(_configRes);
             var tempPath = $"{resPath}_temp";
