@@ -8,30 +8,37 @@
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="Iranian DNS Testing and Optimization"
+    Title="Ultra-Fast developer.android.com DNS Testing"
     Width="900"
     Height="700"
     x:TypeArguments="vms:SanctionsBypassViewModel"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    
+
     <DockPanel Margin="8">
-        
+
         <!-- Header Section -->
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
-            <TextBlock 
-                Text="🚀 Iranian DNS Testing &amp; Optimization Center"
+            <TextBlock
+                Text="🎯 Developer.Android.Com DNS Testing Center"
                 FontSize="20"
                 FontWeight="Bold"
                 HorizontalAlignment="Center"
                 Foreground="DarkBlue" />
-            <TextBlock 
-                Text="Test all 60 Iranian DNS servers and automatically select the fastest one"
+                                                <TextBlock
+                Text="⚡ Ultra-fast testing: ONLY developer.android.com access (3 seconds per DNS, 83 servers)"
                 FontSize="14"
                 HorizontalAlignment="Center"
                 Margin="0,8,0,0"
                 Foreground="Gray" />
+            <TextBlock
+                Text="📊 Status: ✅ FULL ACCESS = Can bypass sanctions | ⚠️ BLOCKED (DNS OK) = DNS works but sanctions applied | ❌ FAILED = DNS doesn't work"
+                FontSize="11"
+                HorizontalAlignment="Center"
+                Margin="0,4,0,0"
+                Foreground="DarkGray"
+                TextWrapping="Wrap" />
         </StackPanel>
         
         <!-- Button Panel -->
@@ -49,13 +56,19 @@
                     Background="Orange"
                     IsEnabled="False"
                     Click="BtnStopTest_Click" />
-            <Button x:Name="btnApplyOptimal" 
-                    Content="✅ Apply Optimal DNS" 
+            <Button x:Name="btnApplyOptimal"
+                    Content="✅ Apply Optimal DNS"
                     Margin="8,0,0,0"
                     Padding="16,8"
                     Background="LightGreen"
                     IsEnabled="False"
                     Click="BtnApplyOptimal_Click" />
+            <Button x:Name="btnAdvancedBypass"
+                    Content="🚀 Advanced Bypass"
+                    Margin="8,0,0,0"
+                    Padding="16,8"
+                    Background="Orange"
+                    Click="BtnAdvancedBypass_Click" />
         </StackPanel>
         
         <!-- Progress Section -->
@@ -69,7 +82,7 @@
                          Height="6"
                          IsIndeterminate="False"
                          Value="0"
-                         Maximum="65" />
+                         Maximum="83" />
         </StackPanel>
         
         <!-- Results Section -->
@@ -94,14 +107,25 @@
                           CanUserSortColumns="True"
                           IsReadOnly="True"
                           GridLinesVisibility="Horizontal"
-                          HeadersVisibility="Column">
+                          HeadersVisibility="Column"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          ScrollViewer.CanContentScroll="True"
+                          ScrollViewer.IsDeferredScrollingEnabled="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          Background="WhiteSmoke"
+                          AlternatingRowBackground="AliceBlue"
+                          RowHeight="22">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="🏆 Rank" Binding="{Binding Rank}" Width="60" />
                         <DataGridTextColumn Header="📡 DNS Name" Binding="{Binding Name}" Width="140" />
                         <DataGridTextColumn Header="🌐 IP Address" Binding="{Binding IpAddress}" Width="120" />
                         <DataGridTextColumn Header="⚡ Response (ms)" Binding="{Binding ResponseTime}" Width="100" />
                         <DataGridTextColumn Header="✅ Success Rate" Binding="{Binding SuccessRate}" Width="100" />
-                        <DataGridTextColumn Header="🎯 Tests Passed" Binding="{Binding TestsPassed}" Width="100" />
+                        <DataGridTextColumn Header="🎯 developer.android.com" Binding="{Binding TestsPassed}" Width="140" />
                         <DataGridTextColumn Header="📊 Tier" Binding="{Binding Tier}" Width="140" />
                         <DataGridTextColumn Header="✅ Status" Binding="{Binding Status}" Width="100" />
                     </DataGrid.Columns>

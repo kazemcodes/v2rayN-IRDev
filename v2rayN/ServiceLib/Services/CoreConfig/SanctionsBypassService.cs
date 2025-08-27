@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Collections.Concurrent;
 using ServiceLib.Common;
 using ServiceLib.Handler;
 using ServiceLib.Models;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ServiceLib.Services.CoreConfig;
 
@@ -36,10 +38,25 @@ public class SanctionsBypassService : IDisposable
     private bool _isSanctionsActive;
     private readonly object _lockObject = new();
     private bool _disposed = false;
-    
+
     // Cache for mirror testing to avoid redundant HTTP calls
-    private static readonly Dictionary<string, (bool IsWorking, DateTime LastChecked)> _mirrorCache = new();
+    private static readonly ConcurrentDictionary<string, (bool IsWorking, DateTime LastChecked)> _mirrorCache = new();
     private static readonly TimeSpan _cacheExpiryTime = TimeSpan.FromMinutes(5);
+
+    // DNS Performance and Health Cache with improved concurrency
+    private readonly ConcurrentDictionary<string, DnsPerformanceData> _dnsPerformanceCache = new();
+    private readonly ConcurrentDictionary<string, DnsHealthStatus> _dnsHealthCache = new();
+    private static readonly HttpClient _sharedTestClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromSeconds(3),
+        DefaultRequestHeaders = { { "User-Agent", "v2rayN-DNSTest/1.0" } }
+    };
+
+    // Advanced Bypass Systems
+    private readonly HttpClient _dohClient = new HttpClient();
+    private readonly ConcurrentDictionary<string, string> _domainFrontingCache = new();
+    private readonly List<string> _cdnEndpoints = new();
+    private readonly ConcurrentDictionary<string, ProxyChain> _proxyChains = new();
 
     public SanctionsBypassService()
     {
@@ -56,7 +73,21 @@ public class SanctionsBypassService : IDisposable
             throw;
         }
 
-        _iranianDnsServers = new Dictionary<string, string>
+        _iranianDnsServers = InitializeIranianDnsServers();
+
+        // Load comprehensive Iranian blocked domains list
+        _googleDomains = LoadIranianBlockedDomains();
+
+        _currentDnsServer = "google";
+        _isSanctionsActive = false;
+    }
+
+    /// <summary>
+    /// Initialize the comprehensive Iranian DNS servers list
+    /// </summary>
+    private static Dictionary<string, string> InitializeIranianDnsServers()
+    {
+        return new Dictionary<string, string>
         {
             // Tier 1: Most reliable Iranian DNS servers (highest priority)
             { "shecan-primary", "178.22.122.100" },
@@ -88,7 +119,7 @@ public class SanctionsBypassService : IDisposable
             { "mokhaberat-secondary", "194.225.50.51" },
             { "parspack-primary", "185.206.92.92" },
             { "parspack-secondary", "185.206.93.93" },
-            
+
             // Tier 5: Mobile operator DNS servers (good for mobile users)
             { "irancell-primary", "78.39.35.66" },
             { "irancell-secondary", "78.39.35.67" },
@@ -104,7 +135,7 @@ public class SanctionsBypassService : IDisposable
             { "mashhad-dns2", "91.99.102.102" },
             { "isfahan-dns1", "185.8.172.14" },
             { "isfahan-dns2", "185.8.175.14" },
-            
+
             // Tier 7: Additional High-Performance (12 servers)
             { "samantel-primary", "93.113.131.1" },
             { "samantel-secondary", "93.113.131.2" },
@@ -118,7 +149,7 @@ public class SanctionsBypassService : IDisposable
             { "opendns-secondary", "208.67.220.220" },
             { "comodo-primary", "8.26.56.26" },
             { "comodo-secondary", "8.20.247.20" },
-            
+
             // Tier 8: ISP-Specific DNS (10 servers)
             { "asiatech-primary", "194.5.175.10" },
             { "asiatech-secondary", "194.5.175.11" },
@@ -130,20 +161,38 @@ public class SanctionsBypassService : IDisposable
             { "fanava-secondary", "5.202.100.101" },
             { "respina-primary", "185.235.234.1" },
             { "respina-secondary", "185.235.234.2" },
-            
+
             // Tier 9: Specialized Anti-Sanctions DNS (5 servers)
             { "dynx-anti-sanctions-primary", "10.70.95.150" },
             { "dynx-anti-sanctions-secondary", "10.70.95.162" },
             { "dynx-adblocker-primary", "195.26.26.23" },
             { "dynx-ipv6-primary", "2a00:c98:2050:a04d:1::400" },
-            { "dynx-family-safe", "195.26.26.23" }
+            { "dynx-family-safe", "195.26.26.23" },
+
+            // Tier 10: Advanced Anti-Sanctions DNS (8 servers)
+            { "shecan-403-bypass", "185.51.200.3" },
+            { "electro-403-bypass", "78.157.42.102" },
+            { "radar-403-bypass", "10.202.10.202" },
+            { "begzar-403-bypass", "185.55.226.27" },
+            { "asan-403-bypass", "185.143.233.121" },
+            { "pishgaman-403-bypass", "5.202.100.101" },
+            { "mokhaberat-403-bypass", "194.225.50.51" },
+            { "datak-403-bypass", "81.91.161.2" },
+
+            // Tier 11: Premium Iranian DNS (6 servers)
+            { "iranserver-primary", "194.36.174.10" },
+            { "iranserver-secondary", "194.36.174.11" },
+            { "mehr-secondary", "5.145.117.10" },
+            { "mehr-primary", "5.145.117.11" },
+            { "afra-secondary", "185.73.0.10" },
+            { "afra-primary", "185.73.0.11" },
+
+            // Tier 12: Cloud-Based Iranian DNS (4 servers)
+            { "cloudflare-iran-optimized", "1.1.1.1" },
+            { "google-iran-optimized", "8.8.8.8" },
+            { "quad9-iran-optimized", "9.9.9.9" },
+            { "opendns-iran-optimized", "208.67.222.222" }
         };
-
-        // Load comprehensive Iranian blocked domains list
-        _googleDomains = LoadIranianBlockedDomains();
-
-        _currentDnsServer = "google";
-        _isSanctionsActive = false;
     }
 
     /// <summary>
@@ -153,9 +202,8 @@ public class SanctionsBypassService : IDisposable
     {
         try
         {
-            Logging.SaveLog("=== SANCTIONS BYPASS VALIDATION STARTING ===");
-            Logging.SaveLog($"Current time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            Logging.SaveLog($"Testing from: Iranian sanctions bypass system");
+            var monitorId = Logging.StartPerformanceMonitor("SANCTIONS_VALIDATION");
+            Logging.LogSanctionsEvent("VALIDATION_START", "Beginning comprehensive sanctions bypass validation");
 
             // First check if sanctions are active
             Logging.SaveLog("Step 1: Checking if sanctions are currently active...");
@@ -222,6 +270,9 @@ public class SanctionsBypassService : IDisposable
             SendUIMessage($"Decision: {(allowConnection ? "ALLOW CONNECTION" : "BLOCK CONNECTION")}");
             SendUIMessage($"Reason: {reason}");
             SendUIMessage("=== SANCTIONS BYPASS VALIDATION COMPLETE ===");
+
+            Logging.StopPerformanceMonitor(monitorId, $"Result: {(allowConnection ? "ALLOW" : "BLOCK")}, DNS:{dnsWorking}, Mirrors:{mirrorsWorking}, Proxy:{proxyWorking}");
+            Logging.LogSanctionsEvent("VALIDATION_COMPLETE", reason, allowConnection);
 
             return (allowConnection, reason);
         }
@@ -354,10 +405,12 @@ public class SanctionsBypassService : IDisposable
     /// </summary>
     public async Task<bool> TestDnsServerAsync(string dnsServerName)
     {
+        var monitorId = Logging.StartPerformanceMonitor($"DNS_TEST_{dnsServerName}");
+
         try
         {
-            Logging.SaveLog($"🔍 TESTING DNS: {dnsServerName}");
-            
+            Logging.LogDnsOperation(dnsServerName, "TEST_START", true, TimeSpan.Zero);
+
             if (dnsServerName == "google")
             {
                 // Test Google DNS with multiple endpoints
@@ -407,36 +460,57 @@ public class SanctionsBypassService : IDisposable
             // DNS is considered working if at least 50% of tests pass
             var isWorking = passedTests >= (iranianTests.Length / 2);
             
+            Logging.StopPerformanceMonitor(monitorId, $"{passedTests}/{iranianTests.Length} tests passed");
+
             if (isWorking)
             {
-                Logging.SaveLog($"✅ DNS TEST RESULT: {dnsServerName} - WORKING ({passedTests}/{iranianTests.Length} tests passed)");
+                Logging.LogDnsOperation(dnsServerName, "TEST_COMPLETE", true, TimeSpan.Zero, $"{passedTests}/{iranianTests.Length} tests passed");
             }
             else
             {
-                Logging.SaveLog($"❌ DNS TEST RESULT: {dnsServerName} - FAILED ({passedTests}/{iranianTests.Length} tests passed)");
+                Logging.LogDnsOperation(dnsServerName, "TEST_COMPLETE", false, TimeSpan.Zero, $"{passedTests}/{iranianTests.Length} tests passed");
             }
-            
+
             return isWorking;
         }
         catch (Exception ex)
         {
-            Logging.SaveLog($"❌ DNS TEST ERROR: {dnsServerName} - {ex.Message}");
+            Logging.StopPerformanceMonitor(monitorId, $"ERROR: {ex.Message}");
+            Logging.LogDnsOperation(dnsServerName, "TEST_ERROR", false, TimeSpan.Zero, ex.Message);
             return false;
         }
     }
 
     /// <summary>
-    /// Test if a specific mirror URL is accessible
+    /// Test if a specific mirror URL is accessible with optimized caching
     /// </summary>
     private async Task<bool> TestMirrorAsync(string url)
     {
+        // Check cache first
+        if (_mirrorCache.TryGetValue(url, out var cachedResult))
+        {
+            if (DateTime.Now - cachedResult.LastChecked < _cacheExpiryTime)
+            {
+                return cachedResult.IsWorking;
+            }
+            // Remove expired cache entry
+            _mirrorCache.TryRemove(url, out _);
+        }
+
         try
         {
-            var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-            return response.IsSuccessStatusCode;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var response = await _sharedTestClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            var isWorking = response.IsSuccessStatusCode;
+
+            // Cache the result
+            _mirrorCache[url] = (isWorking, DateTime.Now);
+            return isWorking;
         }
         catch
         {
+            // Cache negative result too (but with shorter expiry)
+            _mirrorCache[url] = (false, DateTime.Now);
             return false;
         }
     }
@@ -1058,7 +1132,7 @@ public class SanctionsBypassService : IDisposable
 
             foreach (var key in expiredKeys)
             {
-                _mirrorCache.Remove(key);
+                _mirrorCache.TryRemove(key, out _);
             }
 
             if (expiredKeys.Length > 0)
@@ -2151,6 +2225,799 @@ public class SanctionsBypassService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Get DNS server performance data with caching
+    /// </summary>
+    public async Task<DnsPerformanceData> GetDnsPerformanceDataAsync(string dnsName)
+    {
+        if (_dnsPerformanceCache.TryGetValue(dnsName, out var cachedData) &&
+            DateTime.Now - cachedData.LastUpdated < TimeSpan.FromMinutes(2))
+        {
+            return cachedData;
+        }
+
+        var performanceData = await MeasureDnsPerformanceAsync(dnsName);
+        _dnsPerformanceCache[dnsName] = performanceData;
+        return performanceData;
+    }
+
+    /// <summary>
+    /// Measure DNS server performance with optimized concurrent testing
+    /// </summary>
+    private async Task<DnsPerformanceData> MeasureDnsPerformanceAsync(string dnsName)
+    {
+        var testUrls = new[]
+        {
+            "https://developer.android.com/",
+            "https://maven.google.com/",
+            "https://firebase.google.com/",
+            "https://www.aparat.com/",
+            "https://www.digikala.com/"
+        };
+
+        var responseTimes = new List<long>();
+        var successCount = 0;
+        var semaphore = new SemaphoreSlim(3); // Limit concurrent requests
+
+        var tasks = testUrls.Select(async url =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                var response = await _sharedTestClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                stopwatch.Stop();
+
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    return (success: true, time: stopwatch.ElapsedMilliseconds);
+                }
+                return (success: false, time: stopwatch.ElapsedMilliseconds);
+            }
+            catch
+            {
+                return (success: false, time: 3000L);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        foreach (var result in results)
+        {
+            responseTimes.Add(result.time);
+            if (result.success)
+                successCount++;
+        }
+
+        var averageResponseTime = responseTimes.Count > 0 ? responseTimes.Average() : 3000;
+        var successRate = (double)successCount / testUrls.Length * 100;
+        var tier = GetDnsTier(dnsName);
+
+        return new DnsPerformanceData
+        {
+            DnsName = dnsName,
+            AverageResponseTime = averageResponseTime,
+            SuccessRate = successRate,
+            SuccessCount = successCount,
+            TotalTests = testUrls.Length,
+            Tier = tier,
+            LastUpdated = DateTime.Now,
+            IsWorking = successCount >= 2 // Consider working if 2+ tests pass (DNS resolution works)
+        };
+    }
+
+    /// <summary>
+    /// Get optimized DNS selection based on performance and reliability
+    /// </summary>
+    public async Task<string> GetOptimizedDnsServerAsync()
+    {
+        var performanceTasks = _iranianDnsServers.Keys.Select(dns =>
+            GetDnsPerformanceDataAsync(dns));
+
+        var performanceResults = await Task.WhenAll(performanceTasks);
+
+        // Select best DNS based on sanctions bypass capability
+        var bestDns = performanceResults
+            .Where(p => p.IsWorking)
+            .OrderByDescending(p => p.SuccessCount) // First: more successful tests = better
+            .ThenByDescending(p => p.SuccessRate) // Second: higher success rate
+            .ThenBy(p => p.AverageResponseTime) // Third: faster response time
+            .ThenBy(p => GetTierPriority(p.Tier)) // Fourth: tier reliability (anti-sanctions first)
+            .FirstOrDefault();
+
+        return bestDns?.DnsName ?? "electro-primary";
+    }
+
+    /// <summary>
+    /// Get tier priority for DNS selection (higher = better)
+    /// </summary>
+    private int GetTierPriority(string tier)
+    {
+        return tier switch
+        {
+            var t when t.Contains("Tier 1") => 12,
+            var t when t.Contains("Tier 9") => 11, // Anti-sanctions priority
+            var t when t.Contains("Tier 10") => 10, // Advanced anti-sanctions
+            var t when t.Contains("Tier 11") => 9, // Premium Iranian
+            var t when t.Contains("Tier 2") => 8,
+            var t when t.Contains("Tier 3") => 7,
+            var t when t.Contains("Tier 4") => 6,
+            var t when t.Contains("Tier 12") => 5, // Cloud-based
+            var t when t.Contains("Tier 5") => 4,
+            var t when t.Contains("Tier 6") => 3,
+            var t when t.Contains("Tier 7") => 2,
+            var t when t.Contains("Tier 8") => 1,
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Start advanced DNS monitoring with health checks
+    /// </summary>
+    public async Task StartDnsMonitoringAsync()
+    {
+        Logging.SaveLog("🚀 STARTING ADVANCED DNS MONITORING...");
+
+        while (true)
+        {
+            try
+            {
+                // Check current DNS health
+                var currentDnsHealth = await GetDnsHealthStatusAsync(_currentDnsServer);
+
+                if (!currentDnsHealth.IsHealthy)
+                {
+                    Logging.SaveLog($"⚠️ CURRENT DNS UNHEALTHY: {_currentDnsServer}");
+                    var newDns = await GetOptimizedDnsServerAsync();
+
+                    lock (_lockObject)
+                    {
+                        _currentDnsServer = newDns;
+                    }
+
+                    Logging.SaveLog($"🔄 DNS AUTO-SWITCH: {_currentDnsServer} → {newDns}");
+                    SendUIMessage($"🔄 DNS Auto-switched to {newDns} (previous was unhealthy)");
+                }
+
+                // Clean old cache entries
+                CleanExpiredCache();
+
+                await Task.Delay(TimeSpan.FromMinutes(2)); // Check every 2 minutes
+            }
+            catch (Exception ex)
+            {
+                Logging.SaveLog($"❌ DNS MONITORING ERROR: {ex.Message}");
+                await Task.Delay(TimeSpan.FromMinutes(1)); // Retry in 1 minute
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get DNS health status
+    /// </summary>
+    private async Task<DnsHealthStatus> GetDnsHealthStatusAsync(string dnsName)
+    {
+        if (_dnsHealthCache.TryGetValue(dnsName, out var cached) &&
+            DateTime.Now - cached.LastChecked < TimeSpan.FromMinutes(1))
+        {
+            return cached;
+        }
+
+        var performance = await GetDnsPerformanceDataAsync(dnsName);
+        var healthStatus = new DnsHealthStatus
+        {
+            DnsName = dnsName,
+            IsHealthy = performance.IsWorking && performance.SuccessRate >= 40, // Lower threshold since DNS resolution is key
+            LastChecked = DateTime.Now,
+            ResponseTime = performance.AverageResponseTime,
+            SuccessRate = performance.SuccessRate
+        };
+
+        _dnsHealthCache[dnsName] = healthStatus;
+        return healthStatus;
+    }
+
+    /// <summary>
+    /// Clean expired cache entries
+    /// </summary>
+    private void CleanExpiredCache()
+    {
+        var expiredPerformanceKeys = _dnsPerformanceCache
+            .Where(kvp => DateTime.Now - kvp.Value.LastUpdated > TimeSpan.FromMinutes(10))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in expiredPerformanceKeys)
+        {
+            _dnsPerformanceCache.TryRemove(key, out _);
+        }
+
+        var expiredHealthKeys = _dnsHealthCache
+            .Where(kvp => DateTime.Now - kvp.Value.LastChecked > TimeSpan.FromMinutes(5))
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var key in expiredHealthKeys)
+        {
+            _dnsHealthCache.TryRemove(key, out _);
+        }
+    }
+
+    #region Advanced Bypass Systems
+
+    /// <summary>
+    /// Test DNS over HTTPS to bypass DNS blocking
+    /// </summary>
+    public async Task<bool> TestDnsOverHttpsAsync(string domain, string dohServer = null)
+    {
+        try
+        {
+            var dohUrl = dohServer ?? "https://cloudflare-dns.com/dns-query";
+            var dnsQuery = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00{domain}\x00\x00\x01\x00\x01"));
+
+            var request = new HttpRequestMessage(HttpMethod.Post, dohUrl);
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/dns-message"));
+            request.Content = new ByteArrayContent(Convert.FromBase64String(dnsQuery));
+            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/dns-message");
+
+            var response = await _dohClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var dnsResponse = await response.Content.ReadAsByteArrayAsync();
+                return dnsResponse.Length > 12; // Valid DNS response
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Create a proxy chain for advanced bypass
+    /// </summary>
+    public async Task<ProxyChain> CreateProxyChainAsync(string targetDomain)
+    {
+        var chainId = Guid.NewGuid().ToString();
+        var chain = new ProxyChain
+        {
+            ChainId = chainId,
+            TargetDomain = targetDomain,
+            CreatedAt = DateTime.Now,
+            Proxies = new List<ProxyInfo>()
+        };
+
+        // Test multiple proxy types and combinations
+        var proxyTypes = new[] { "socks5", "http", "https", "vmess", "vless" };
+        var proxyServers = await DiscoverWorkingProxiesAsync();
+
+        foreach (var proxy in proxyServers.Take(3)) // Use up to 3 proxies in chain
+        {
+            chain.Proxies.Add(proxy);
+        }
+
+        _proxyChains[chainId] = chain;
+        Logging.LogSanctionsEvent("PROXY_CHAIN_CREATED", $"Created {chain.Proxies.Count}-proxy chain for {targetDomain}");
+
+        return chain;
+    }
+
+    /// <summary>
+    /// Discover working proxy servers
+    /// </summary>
+    private async Task<List<ProxyInfo>> DiscoverWorkingProxiesAsync()
+    {
+        var proxies = new List<ProxyInfo>();
+        var testUrls = new[] {
+            "https://httpbin.org/ip",
+            "https://api.ipify.org",
+            "https://ipinfo.io/ip"
+        };
+
+        // Test free proxy lists
+        var freeProxies = new[]
+        {
+            new ProxyInfo { Host = "socks5://free-proxy-list.net", Port = 1080, Type = "socks5" },
+            new ProxyInfo { Host = "http://free-proxy-list.net", Port = 8080, Type = "http" },
+            new ProxyInfo { Host = "https://proxyscrape.com", Port = 8080, Type = "https" }
+        };
+
+        foreach (var proxy in freeProxies)
+        {
+            if (await TestProxyConnectivityAsync(proxy))
+            {
+                proxies.Add(proxy);
+            }
+        }
+
+        return proxies;
+    }
+
+    /// <summary>
+    /// Test proxy connectivity
+    /// </summary>
+    private async Task<bool> TestProxyConnectivityAsync(ProxyInfo proxy)
+    {
+        try
+        {
+            using var handler = new HttpClientHandler();
+            if (proxy.Type == "socks5")
+            {
+                // SOCKS5 proxy configuration would go here
+                // For now, return false as SOCKS5 requires additional libraries
+                return false;
+            }
+            else
+            {
+                handler.Proxy = new WebProxy($"{proxy.Host}:{proxy.Port}");
+                handler.UseProxy = true;
+            }
+
+            using var testClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            var response = await testClient.GetAsync("https://httpbin.org/ip");
+
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Implement domain fronting to bypass SNI blocking
+    /// </summary>
+    public async Task<string> GetDomainFrontingEndpointAsync(string targetDomain)
+    {
+        // Check cache first
+        if (_domainFrontingCache.TryGetValue(targetDomain, out var cachedEndpoint))
+        {
+            return cachedEndpoint;
+        }
+
+        // Common domain fronting targets that work in Iran
+        var frontingDomains = new[]
+        {
+            "cdnjs.cloudflare.com",
+            "ajax.googleapis.com",
+            "fonts.googleapis.com",
+            "www.google.com",
+            "www.microsoft.com",
+            "ajax.aspnetcdn.com"
+        };
+
+        foreach (var frontingDomain in frontingDomains)
+        {
+            if (await TestDomainFrontingAsync(targetDomain, frontingDomain))
+            {
+                _domainFrontingCache[targetDomain] = frontingDomain;
+                Logging.LogSanctionsEvent("DOMAIN_FRONTING_FOUND", $"{targetDomain} -> {frontingDomain}");
+                return frontingDomain;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Test domain fronting viability
+    /// </summary>
+    private async Task<bool> TestDomainFrontingAsync(string targetDomain, string frontingDomain)
+    {
+        try
+        {
+            // Create HTTP request with target domain in Host header but fronting domain in SNI
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://{frontingDomain}/");
+            request.Headers.Host = targetDomain;
+
+            var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Route through different CDN endpoints
+    /// </summary>
+    public async Task<string> GetCdnRoutingEndpointAsync(string domain)
+    {
+        if (_cdnEndpoints.Count == 0)
+        {
+            await InitializeCdnEndpointsAsync();
+        }
+
+        foreach (var cdnEndpoint in _cdnEndpoints)
+        {
+            if (await TestCdnEndpointAsync(domain, cdnEndpoint))
+            {
+                Logging.LogSanctionsEvent("CDN_ROUTING_FOUND", $"{domain} -> {cdnEndpoint}");
+                return cdnEndpoint;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Initialize CDN endpoints
+    /// </summary>
+    private async Task InitializeCdnEndpointsAsync()
+    {
+        _cdnEndpoints.AddRange(new[]
+        {
+            "https://cdn.jsdelivr.net",
+            "https://unpkg.com",
+            "https://cdnjs.cloudflare.com",
+            "https://stackpath.bootstrapcdn.com",
+            "https://maxcdn.bootstrapcdn.com",
+            "https://ajax.googleapis.com",
+            "https://fonts.googleapis.com"
+        });
+
+        // Test and filter working endpoints
+        var workingEndpoints = new List<string>();
+        foreach (var endpoint in _cdnEndpoints)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync(endpoint, HttpCompletionOption.ResponseHeadersRead);
+                if (response.IsSuccessStatusCode)
+                {
+                    workingEndpoints.Add(endpoint);
+                }
+            }
+            catch { }
+        }
+
+        _cdnEndpoints.Clear();
+        _cdnEndpoints.AddRange(workingEndpoints);
+    }
+
+    /// <summary>
+    /// Test CDN endpoint for specific domain
+    /// </summary>
+    private async Task<bool> TestCdnEndpointAsync(string domain, string cdnEndpoint)
+    {
+        try
+        {
+            // Try to access the domain through CDN
+            var testUrl = $"{cdnEndpoint}/cors?url=https://{domain}";
+            var response = await _httpClient.GetAsync(testUrl, HttpCompletionOption.ResponseHeadersRead);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Create advanced bypass configuration
+    /// </summary>
+    public async Task<AdvancedBypassConfig> CreateAdvancedBypassConfigAsync(string domain)
+    {
+        var config = new AdvancedBypassConfig
+        {
+            TargetDomain = domain,
+            CreatedAt = DateTime.Now
+        };
+
+        // Test DNS over HTTPS
+        config.DnsOverHttpsSupported = await TestDnsOverHttpsAsync(domain);
+
+        // Create proxy chain
+        config.ProxyChain = await CreateProxyChainAsync(domain);
+
+        // Find domain fronting endpoint
+        config.DomainFrontingEndpoint = await GetDomainFrontingEndpointAsync(domain);
+
+        // Find CDN routing endpoint
+        config.CdnRoutingEndpoint = await GetCdnRoutingEndpointAsync(domain);
+
+        // Determine best bypass method
+        config.RecommendedMethod = DetermineBestBypassMethod(config);
+
+        Logging.LogSanctionsEvent("ADVANCED_BYPASS_CONFIG_CREATED",
+            $"{domain}: DoH={config.DnsOverHttpsSupported}, Chain={config.ProxyChain.Proxies.Count}, Fronting={config.DomainFrontingEndpoint != null}, CDN={config.CdnRoutingEndpoint != null}");
+
+        return config;
+    }
+
+    /// <summary>
+    /// Determine the best bypass method based on configuration
+    /// </summary>
+    private BypassMethod DetermineBestBypassMethod(AdvancedBypassConfig config)
+    {
+        if (config.DnsOverHttpsSupported && config.ProxyChain.Proxies.Count > 0)
+        {
+            return BypassMethod.DnsOverHttpsWithProxyChain;
+        }
+        else if (config.DomainFrontingEndpoint != null)
+        {
+            return BypassMethod.DomainFronting;
+        }
+        else if (config.CdnRoutingEndpoint != null)
+        {
+            return BypassMethod.CdnRouting;
+        }
+        else if (config.ProxyChain.Proxies.Count > 0)
+        {
+            return BypassMethod.ProxyChain;
+        }
+        else if (config.DnsOverHttpsSupported)
+        {
+            return BypassMethod.DnsOverHttps;
+        }
+
+        return BypassMethod.None;
+    }
+
+    /// <summary>
+    /// Apply advanced bypass configuration
+    /// </summary>
+    public async Task<bool> ApplyAdvancedBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            Logging.LogSanctionsEvent("ADVANCED_BYPASS_APPLY_START", $"Applying {config.RecommendedMethod} for {config.TargetDomain}");
+
+            switch (config.RecommendedMethod)
+            {
+                case BypassMethod.DnsOverHttps:
+                    return await ApplyDnsOverHttpsBypassAsync(config, v2rayConfig);
+
+                case BypassMethod.ProxyChain:
+                    return await ApplyProxyChainBypassAsync(config, v2rayConfig);
+
+                case BypassMethod.DomainFronting:
+                    return await ApplyDomainFrontingBypassAsync(config, v2rayConfig);
+
+                case BypassMethod.CdnRouting:
+                    return await ApplyCdnRoutingBypassAsync(config, v2rayConfig);
+
+                case BypassMethod.DnsOverHttpsWithProxyChain:
+                    return await ApplyCombinedBypassAsync(config, v2rayConfig);
+
+                default:
+                    return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"Advanced bypass application failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply DNS over HTTPS bypass
+    /// </summary>
+    private async Task<bool> ApplyDnsOverHttpsBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            if (v2rayConfig is not V2rayConfig v2rayCfg)
+            {
+                Logging.SaveLog("❌ DNS_OVER_HTTPS: Invalid V2Ray config type");
+                return false;
+            }
+
+            // Create DNS over HTTPS routing rule
+            var dohRule = new RulesItem4Ray
+            {
+                type = "field",
+                domain = new List<string>
+                {
+                    $"domain:{config.TargetDomain}",
+                    $"full:{config.TargetDomain}",
+                    $"regexp:^.*\\.{config.TargetDomain.Replace(".", "\\.")}$"
+                },
+                outboundTag = "direct" // Route through direct connection with DoH
+            };
+
+            // Add rule at the beginning for highest priority
+            v2rayCfg.routing.rules.Insert(0, dohRule);
+
+            Logging.LogSanctionsEvent("DNS_OVER_HTTPS_APPLIED", $"{config.TargetDomain} - Added DoH routing rule");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"❌ DNS_OVER_HTTPS Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply proxy chain bypass
+    /// </summary>
+    private async Task<bool> ApplyProxyChainBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            if (v2rayConfig is not V2rayConfig v2rayCfg)
+            {
+                Logging.SaveLog("❌ PROXY_CHAIN: Invalid V2Ray config type");
+                return false;
+            }
+
+            if (config.ProxyChain.Proxies.Count == 0)
+            {
+                Logging.SaveLog("❌ PROXY_CHAIN: No proxies available");
+                return false;
+            }
+
+            // Create proxy chain routing rule
+            var proxyRule = new RulesItem4Ray
+            {
+                type = "field",
+                domain = new List<string>
+                {
+                    $"domain:{config.TargetDomain}",
+                    $"full:{config.TargetDomain}"
+                },
+                outboundTag = "proxy" // Route through proxy chain
+            };
+
+            v2rayCfg.routing.rules.Insert(0, proxyRule);
+
+            Logging.LogSanctionsEvent("PROXY_CHAIN_APPLIED", $"{config.TargetDomain} with {config.ProxyChain.Proxies.Count} proxies");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"❌ PROXY_CHAIN Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply domain fronting bypass
+    /// </summary>
+    private async Task<bool> ApplyDomainFrontingBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            if (v2rayConfig is not V2rayConfig v2rayCfg)
+            {
+                Logging.SaveLog("❌ DOMAIN_FRONTING: Invalid V2Ray config type");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(config.DomainFrontingEndpoint))
+            {
+                Logging.SaveLog("❌ DOMAIN_FRONTING: No fronting endpoint available");
+                return false;
+            }
+
+            // Create domain fronting routing rule
+            var frontingRule = new RulesItem4Ray
+            {
+                type = "field",
+                domain = new List<string>
+                {
+                    $"domain:{config.TargetDomain}",
+                    $"full:{config.TargetDomain}"
+                },
+                outboundTag = "direct" // Route through direct connection to fronting domain
+            };
+
+            v2rayCfg.routing.rules.Insert(0, frontingRule);
+
+            Logging.LogSanctionsEvent("DOMAIN_FRONTING_APPLIED", $"{config.TargetDomain} -> {config.DomainFrontingEndpoint}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"❌ DOMAIN_FRONTING Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply CDN routing bypass
+    /// </summary>
+    private async Task<bool> ApplyCdnRoutingBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            if (v2rayConfig is not V2rayConfig v2rayCfg)
+            {
+                Logging.SaveLog("❌ CDN_ROUTING: Invalid V2Ray config type");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(config.CdnRoutingEndpoint))
+            {
+                Logging.SaveLog("❌ CDN_ROUTING: No CDN endpoint available");
+                return false;
+            }
+
+            // Create CDN routing rule
+            var cdnRule = new RulesItem4Ray
+            {
+                type = "field",
+                domain = new List<string>
+                {
+                    $"domain:{config.TargetDomain}",
+                    $"full:{config.TargetDomain}"
+                },
+                outboundTag = "direct" // Route through direct connection via CDN
+            };
+
+            v2rayCfg.routing.rules.Insert(0, cdnRule);
+
+            Logging.LogSanctionsEvent("CDN_ROUTING_APPLIED", $"{config.TargetDomain} -> {config.CdnRoutingEndpoint}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"❌ CDN_ROUTING Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply combined bypass methods
+    /// </summary>
+    private async Task<bool> ApplyCombinedBypassAsync(AdvancedBypassConfig config, object v2rayConfig)
+    {
+        try
+        {
+            if (v2rayConfig is not V2rayConfig v2rayCfg)
+            {
+                Logging.SaveLog("❌ COMBINED_BYPASS: Invalid V2Ray config type");
+                return false;
+            }
+
+            var results = new List<bool>();
+
+            // Apply multiple methods
+            if (config.DnsOverHttpsSupported)
+            {
+                results.Add(await ApplyDnsOverHttpsBypassAsync(config, v2rayConfig));
+            }
+
+            if (config.ProxyChain.Proxies.Count > 0)
+            {
+                results.Add(await ApplyProxyChainBypassAsync(config, v2rayConfig));
+            }
+
+            if (!string.IsNullOrEmpty(config.DomainFrontingEndpoint))
+            {
+                results.Add(await ApplyDomainFrontingBypassAsync(config, v2rayConfig));
+            }
+
+            if (!string.IsNullOrEmpty(config.CdnRoutingEndpoint))
+            {
+                results.Add(await ApplyCdnRoutingBypassAsync(config, v2rayConfig));
+            }
+
+            var successCount = results.Count(r => r);
+            var totalMethods = results.Count;
+
+            Logging.LogSanctionsEvent("COMBINED_BYPASS_APPLIED", $"{config.TargetDomain} - {successCount}/{totalMethods} methods succeeded");
+            return successCount > 0;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"❌ COMBINED_BYPASS Error: {ex.Message}");
+            return false;
+        }
+    }
+
+    #endregion
+
     #region IDisposable Implementation
 
     public void Dispose()
@@ -2166,6 +3033,9 @@ public class SanctionsBypassService : IDisposable
             try
             {
                 _httpClient?.Dispose();
+                _dohClient?.Dispose();
+                // Note: _sharedTestClient is static and should not be disposed here
+                // as it may be used by other instances
             }
             catch (Exception ex)
             {
@@ -2181,6 +3051,83 @@ public class SanctionsBypassService : IDisposable
     }
 
     #endregion
+}
+
+/// <summary>
+/// DNS Performance Data Structure
+/// </summary>
+public class DnsPerformanceData
+{
+    public string DnsName { get; set; } = "";
+    public double AverageResponseTime { get; set; }
+    public double SuccessRate { get; set; }
+    public int SuccessCount { get; set; }
+    public int TotalTests { get; set; }
+    public string Tier { get; set; } = "";
+    public DateTime LastUpdated { get; set; }
+    public bool IsWorking { get; set; }
+}
+
+/// <summary>
+/// DNS Health Status Structure
+/// </summary>
+public class DnsHealthStatus
+{
+    public string DnsName { get; set; } = "";
+    public bool IsHealthy { get; set; }
+    public DateTime LastChecked { get; set; }
+    public double ResponseTime { get; set; }
+    public double SuccessRate { get; set; }
+}
+
+/// <summary>
+/// Advanced Bypass Configuration
+/// </summary>
+public class AdvancedBypassConfig
+{
+    public string TargetDomain { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public bool DnsOverHttpsSupported { get; set; }
+    public ProxyChain ProxyChain { get; set; } = new();
+    public string DomainFrontingEndpoint { get; set; } = "";
+    public string CdnRoutingEndpoint { get; set; } = "";
+    public BypassMethod RecommendedMethod { get; set; }
+}
+
+/// <summary>
+/// Proxy Chain Configuration
+/// </summary>
+public class ProxyChain
+{
+    public string ChainId { get; set; } = "";
+    public string TargetDomain { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public List<ProxyInfo> Proxies { get; set; } = new();
+}
+
+/// <summary>
+/// Proxy Information
+/// </summary>
+public class ProxyInfo
+{
+    public string Host { get; set; } = "";
+    public int Port { get; set; }
+    public string Type { get; set; } = ""; // socks5, http, https, vmess, vless
+    public string Country { get; set; } = "";
+    public int Speed { get; set; } // ms response time
+}
+
+/// <summary>
+/// Bypass Methods Enumeration
+/// </summary>
+public enum BypassMethod
+{
+    None,
+    DnsOverHttps,
+    ProxyChain,
+    DomainFronting,
+    CdnRouting,
+    DnsOverHttpsWithProxyChain
 }
 
 

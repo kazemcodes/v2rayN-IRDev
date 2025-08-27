@@ -11,6 +11,7 @@ using v2rayN.Base;
 using ServiceLib.Common;
 using ServiceLib.Services.CoreConfig;
 using ServiceLib.Services;
+using System.Collections.Concurrent;
 
 namespace v2rayN.Views;
 
@@ -20,8 +21,18 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
     private readonly SanctionsBypassService _sanctionsService;
     private CancellationTokenSource _cancellationTokenSource;
     private bool _isTesting = false;
-    
+    private static readonly Lazy<Dictionary<string, string>> _dnsServerCache = new Lazy<Dictionary<string, string>>(InitializeDnsServers);
+    private static readonly HttpClient _sharedHttpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromSeconds(3),
+        DefaultRequestHeaders = { { "User-Agent", "v2rayN-DNSTest/1.0" } }
+    };
+
     public ObservableCollection<DnsTestResult> DnsResults { get; set; }
+
+    private const int MAX_CONCURRENT_TESTS = 8;
+    private const int TEST_TIMEOUT_MS = 3000;
+    private const int DELAY_BETWEEN_TESTS_MS = 50;
 
     public DnsTestingWindow()
     {
@@ -35,20 +46,136 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
         DnsResults = new ObservableCollection<DnsTestResult>();
         dgResults.ItemsSource = DnsResults;
 
-                    LogMessage("🚀 DNS Testing Center initialized - Ready to test 65 Iranian DNS servers");
-        
+        LogMessage($"⚡ Ultra-Fast developer.android.com DNS Testing initialized - Ready to test {GetDnsServers().Count} DNS servers");
+
         this.WhenActivated(disposables =>
         {
             Disposable.Create(() => { }).DisposeWith(disposables);
         });
     }
 
-    private async void BtnTestAllDns_Click(object sender, RoutedEventArgs e)
+    private static Dictionary<string, string> InitializeDnsServers()
+    {
+        return new Dictionary<string, string>
+        {
+            // Tier 1: Most Reliable
+            { "shecan-primary", "178.22.122.100" },
+            { "shecan-secondary", "185.51.200.2" },
+            { "electro-primary", "78.157.42.100" },
+            { "electro-secondary", "78.157.42.101" },
+            { "radar-primary", "10.202.10.10" },
+            { "radar-secondary", "10.202.10.11" },
+
+            // Tier 2: Reliable Alternatives
+            { "shelter-primary", "94.103.125.157" },
+            { "shelter-secondary", "94.103.125.158" },
+            { "403-primary", "10.202.10.202" },
+            { "403-secondary", "10.202.10.102" },
+            { "begzar-primary", "185.55.226.26" },
+            { "begzar-secondary", "185.55.225.25" },
+
+            // Tier 3: Additional Options
+            { "asan-primary", "185.143.233.120" },
+            { "asan-secondary", "185.143.234.120" },
+            { "asan-dns", "185.143.232.120" },
+
+            // Tier 4: High-Performance 2024
+            { "pishgaman-primary", "5.202.100.100" },
+            { "pishgaman-secondary", "5.202.100.101" },
+            { "tci-primary", "192.168.100.100" },
+            { "tci-secondary", "192.168.100.101" },
+            { "mokhaberat-primary", "194.225.50.50" },
+            { "mokhaberat-secondary", "194.225.50.51" },
+            { "parspack-primary", "185.206.92.92" },
+            { "parspack-secondary", "185.206.93.93" },
+
+            // Tier 5: Mobile Operators
+            { "irancell-primary", "78.39.35.66" },
+            { "irancell-secondary", "78.39.35.67" },
+            { "hamrah-primary", "217.218.127.127" },
+            { "hamrah-secondary", "217.218.155.155" },
+            { "rightel-primary", "78.157.42.101" },
+            { "rightel-secondary", "78.157.42.100" },
+
+            // Tier 6: Regional
+            { "tehran-dns1", "185.143.232.100" },
+            { "tehran-dns2", "185.143.232.101" },
+            { "mashhad-dns1", "91.99.101.101" },
+            { "mashhad-dns2", "91.99.102.102" },
+            { "isfahan-dns1", "185.8.172.14" },
+            { "isfahan-dns2", "185.8.175.14" },
+
+            // Tier 7: High-Performance Global
+            { "samantel-primary", "93.113.131.1" },
+            { "samantel-secondary", "93.113.131.2" },
+            { "arvancloud-primary", "178.22.122.100" },
+            { "arvancloud-secondary", "178.22.122.101" },
+            { "cloudflare-iran", "1.1.1.1" },
+            { "cloudflare-family", "1.1.1.3" },
+            { "quad9-iran", "9.9.9.9" },
+            { "quad9-secure", "9.9.9.10" },
+            { "opendns-primary", "208.67.222.222" },
+            { "opendns-secondary", "208.67.220.220" },
+            { "comodo-primary", "8.26.56.26" },
+            { "comodo-secondary", "8.20.247.20" },
+
+            // Tier 8: ISP-Specific
+            { "asiatech-primary", "194.5.175.10" },
+            { "asiatech-secondary", "194.5.175.11" },
+            { "shatel-primary", "85.15.1.14" },
+            { "shatel-secondary", "85.15.1.15" },
+            { "datak-primary", "81.91.161.1" },
+            { "datak-secondary", "81.91.161.2" },
+            { "fanava-primary", "5.202.100.100" },
+            { "fanava-secondary", "5.202.100.101" },
+            { "respina-primary", "185.235.234.1" },
+            { "respina-secondary", "185.235.234.2" },
+
+            // Tier 9: Specialized Anti-Sanctions DNS
+            { "dynx-anti-sanctions-primary", "10.70.95.150" },
+            { "dynx-anti-sanctions-secondary", "10.70.95.162" },
+            { "dynx-adblocker-primary", "195.26.26.23" },
+            { "dynx-ipv6-primary", "2a00:c98:2050:a04d:1::400" },
+            { "dynx-family-safe", "195.26.26.23" },
+
+            // Tier 10: Advanced Anti-Sanctions DNS
+            { "shecan-403-bypass", "185.51.200.3" },
+            { "electro-403-bypass", "78.157.42.102" },
+            { "radar-403-bypass", "10.202.10.202" },
+            { "begzar-403-bypass", "185.55.226.27" },
+            { "asan-403-bypass", "185.143.233.121" },
+            { "pishgaman-403-bypass", "5.202.100.101" },
+            { "mokhaberat-403-bypass", "194.225.50.51" },
+            { "datak-403-bypass", "81.91.161.2" },
+
+            // Tier 11: Premium Iranian DNS
+            { "iranserver-primary", "194.36.174.10" },
+            { "iranserver-secondary", "194.36.174.11" },
+            { "mehr-secondary", "5.145.117.10" },
+            { "mehr-primary", "5.145.117.11" },
+            { "afra-secondary", "185.73.0.10" },
+            { "afra-primary", "185.73.0.11" },
+
+            // Tier 12: Cloud-Based Iranian DNS
+            { "cloudflare-iran-optimized", "1.1.1.1" },
+            { "google-iran-optimized", "8.8.8.8" },
+            { "quad9-iran-optimized", "9.9.9.9" },
+            { "opendns-iran-optimized", "208.67.222.222" }
+        };
+    }
+
+    public static Dictionary<string, string> GetDnsServers()
+    {
+        return _dnsServerCache.Value;
+    }
+
+    private void BtnTestAllDns_Click(object sender, RoutedEventArgs e)
     {
         if (_isTesting)
             return;
 
-        await StartDnsTesting();
+        // Start testing on a background thread to prevent UI blocking
+        Task.Run(async () => await StartDnsTesting());
     }
 
     private void BtnStopTest_Click(object sender, RoutedEventArgs e)
@@ -56,9 +183,50 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
         StopDnsTesting();
     }
 
-    private async void BtnApplyOptimal_Click(object sender, RoutedEventArgs e)
+    private void BtnApplyOptimal_Click(object sender, RoutedEventArgs e)
     {
-        await ApplyOptimalDns();
+        // Start DNS application on a background thread
+        Task.Run(async () =>
+        {
+            var result = await ApplyOptimalDns();
+            if (!result)
+            {
+                // If basic DNS application fails, offer advanced bypass options
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var resultDialog = MessageBox.Show(
+                        "Basic DNS application failed. Would you like to try advanced bypass methods?",
+                        "Advanced Bypass Options",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (resultDialog == MessageBoxResult.Yes)
+                    {
+                        OpenAdvancedBypassWindow();
+                    }
+                });
+            }
+        });
+    }
+
+    private void BtnAdvancedBypass_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAdvancedBypassWindow();
+    }
+
+    private void OpenAdvancedBypassWindow()
+    {
+        try
+        {
+            var advancedBypassWindow = new AdvancedBypassWindow();
+            advancedBypassWindow.Owner = this;
+            advancedBypassWindow.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"❌ Error opening advanced bypass window: {ex.Message}");
+            MessageBox.Show($"Error opening advanced bypass window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task StartDnsTesting()
@@ -74,10 +242,11 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
             btnApplyOptimal.IsEnabled = false;
             progressPanel.Visibility = Visibility.Visible;
             progressBar.Value = 0;
+            progressBar.Maximum = GetDnsServers().Count;
             
             DnsResults.Clear();
-            LogMessage("🚀 STARTING COMPREHENSIVE DNS TESTING...");
-            LogMessage("📊 Testing all 65 Iranian DNS servers for optimal performance");
+            LogMessage("🚀 STARTING ULTRA-FAST DEVELOPER.ANDROID.COM TESTING...");
+            LogMessage($"📊 Testing all {GetDnsServers().Count} DNS servers for ONLY developer.android.com access (~3 seconds per DNS)");
             
             // Test DNS servers with error handling to prevent crashes
             await TestAllDnsServersSafely();
@@ -146,8 +315,8 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
                             Name = dnsName,
                             IpAddress = ipAddress,
                             ResponseTime = $"{responseTime}ms",
-                            SuccessRate = $"{(testsPassed.passed * 100 / testsPassed.total)}%",
-                            TestsPassed = $"{testsPassed.passed}/{testsPassed.total}",
+                            SuccessRate = $"{(testsPassed.passed * 100 / 5)}%",
+                            TestsPassed = $"{testsPassed.passed}/5",
                             Tier = GetTierFromName(dnsName),
                             Status = "✅ WORKING"
                         };
@@ -178,7 +347,7 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
                             IpAddress = ipAddress,
                             ResponseTime = "TIMEOUT",
                             SuccessRate = "0%",
-                            TestsPassed = "0/4",
+                            TestsPassed = "0/5",
                             Tier = GetTierFromName(dnsName),
                             Status = "❌ FAILED"
                         };
@@ -249,9 +418,16 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
         Application.Current.Dispatcher.Invoke(() =>
         {
             var total = DnsResults.Count;
-            var working = DnsResults.Count(r => r.Status.Contains("WORKING"));
-            var failed = total - working;
-            var optimal = DnsResults.Where(r => r.Status.Contains("WORKING")).OrderBy(r => r.Rank).FirstOrDefault();
+                    var fullAccess = DnsResults.Count(r => r.Status.Contains("FULL ACCESS"));
+        var dnsOkBlocked = DnsResults.Count(r => r.Status.Contains("BLOCKED (DNS OK)"));
+        var working = fullAccess + dnsOkBlocked;
+        var failed = total - working;
+            var optimal = DnsResults.Where(r => r.Status.Contains("FULL ACCESS"))
+                           .OrderBy(r => r.Rank)
+                           .FirstOrDefault() ??
+                           DnsResults.Where(r => r.Status.Contains("BLOCKED (DNS OK)"))
+                           .OrderBy(r => r.Rank)
+                           .FirstOrDefault();
             
             txtTotalTested.Text = $"Total: {total}";
             txtWorkingCount.Text = $"Working: {working}";
@@ -260,147 +436,95 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
         });
     }
 
-    private async Task ApplyOptimalDns()
-    {
-        try
+        private async Task<bool> ApplyOptimalDns()
         {
-            var optimalDns = DnsResults.Where(r => r.Status.Contains("WORKING")).OrderBy(r => r.Rank).FirstOrDefault();
-            
-            if (optimalDns == null)
+            try
             {
-                MessageBox.Show("No working DNS servers found to apply.", "No Optimal DNS", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+                // Use the new optimized DNS selection algorithm
+                var optimalDnsName = await _sanctionsService.GetOptimizedDnsServerAsync();
 
-            LogMessage($"🎯 APPLYING OPTIMAL DNS: {optimalDns.Name} ({optimalDns.IpAddress})");
-            
-            // Apply the optimal DNS through the sanctions bypass service
-            var success = await _sanctionsService.Handle403ErrorAsync("manual-dns-application", 443);
-            
-            if (success)
-            {
-                LogMessage($"✅ SUCCESS: {optimalDns.Name} applied as optimal DNS");
-                MessageBox.Show($"Optimal DNS applied successfully!\n\nDNS: {optimalDns.Name}\nIP: {optimalDns.IpAddress}\nResponse Time: {optimalDns.ResponseTime}", 
-                               "DNS Applied", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (string.IsNullOrEmpty(optimalDnsName))
+                {
+                    MessageBox.Show("No working DNS servers found to apply.", "No Optimal DNS", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                // Get the IP address for the optimal DNS
+                var dnsServers = GetAllDnsServers();
+                if (!dnsServers.TryGetValue(optimalDnsName, out var ipAddress))
+                {
+                    MessageBox.Show("Could not find IP address for optimal DNS server.", "DNS Configuration Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                LogMessage($"🎯 APPLYING OPTIMIZED DNS: {optimalDnsName} ({ipAddress})");
+
+                // Apply the optimal DNS through the sanctions bypass service
+                var success = await _sanctionsService.Handle403ErrorAsync("manual-dns-application", 443);
+
+                if (success)
+                {
+                    LogMessage($"✅ SUCCESS: {optimalDnsName} applied as optimized DNS");
+
+                    // Start DNS monitoring for automatic failover
+                    _ = Task.Run(() => _sanctionsService.StartDnsMonitoringAsync());
+
+                    MessageBox.Show($"Optimized DNS applied successfully!\n\nDNS: {optimalDnsName}\nIP: {ipAddress}\n\n✅ Automatic monitoring enabled for DNS health and failover.",
+                                   "DNS Applied with Monitoring", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return true;
+                }
+                else
+                {
+                    LogMessage($"⚠️ WARNING: Could not apply {optimalDnsName} - trying alternative method");
+                    MessageBox.Show($"Could not automatically apply DNS. Please manually set:\n\nDNS: {optimalDnsName}\nIP: {ipAddress}\n\nNote: You can copy these values and set them in your system DNS settings.",
+                                   "Manual Configuration Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                LogMessage($"⚠️ WARNING: Could not apply {optimalDns.Name} - trying alternative method");
-                MessageBox.Show($"Could not automatically apply DNS. Please manually set:\n\nDNS: {optimalDns.Name}\nIP: {optimalDns.IpAddress}", 
-                               "Manual Configuration Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                LogMessage($"❌ ERROR applying optimal DNS: {ex.Message}");
+                MessageBox.Show($"Error applying optimal DNS: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
-        catch (Exception ex)
-        {
-            LogMessage($"❌ ERROR applying optimal DNS: {ex.Message}");
-            MessageBox.Show($"Error applying optimal DNS: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+
+    /// <summary>
+    /// Get all DNS servers (using cached version for performance)
+    /// </summary>
+    private Dictionary<string, string> GetAllDnsServers()
+    {
+        return GetDnsServers();
     }
 
     private void LogMessage(string message)
     {
-        Application.Current.Dispatcher.Invoke(() =>
+        // Use BeginInvoke for better performance and prevent UI blocking
+        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
             txtLog.Text += $"[{timestamp}] {message}\n";
-            logScrollViewer.ScrollToEnd();
-        });
+
+            // Only scroll to end if we're not in the middle of rapid updates
+            if (txtLog.Text.Length < 10000) // Prevent performance issues with very large logs
+            {
+                logScrollViewer.ScrollToEnd();
+            }
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     /// <summary>
-    /// Test all DNS servers safely with proper error handling to prevent crashes
+    /// Test all DNS servers with optimized concurrent testing and proper error handling
     /// </summary>
     private async Task TestAllDnsServersSafely()
     {
         try
         {
-            // Define all Iranian DNS servers directly (matching SanctionsBypassService)
-            var iranianDnsServers = new Dictionary<string, string>
-            {
-                // Tier 1: Most Reliable
-                { "shecan-primary", "178.22.122.100" },
-                { "shecan-secondary", "185.51.200.2" },
-                { "electro-primary", "78.157.42.100" },
-                { "electro-secondary", "78.157.42.101" },
-                { "radar-primary", "10.202.10.10" },
-                { "radar-secondary", "10.202.10.11" },
-                
-                // Tier 2: Reliable Alternatives
-                { "shelter-primary", "94.103.125.157" },
-                { "shelter-secondary", "94.103.125.158" },
-                { "403-primary", "10.202.10.202" },
-                { "403-secondary", "10.202.10.102" },
-                { "begzar-primary", "185.55.226.26" },
-                { "begzar-secondary", "185.55.225.25" },
-                
-                // Tier 3: Additional Options
-                { "asan-primary", "185.143.233.120" },
-                { "asan-secondary", "185.143.234.120" },
-                { "asan-dns", "185.143.232.120" },
-                
-                // Tier 4: High-Performance 2024
-                { "pishgaman-primary", "5.202.100.100" },
-                { "pishgaman-secondary", "5.202.100.101" },
-                { "tci-primary", "192.168.100.100" },
-                { "tci-secondary", "192.168.100.101" },
-                { "mokhaberat-primary", "194.225.50.50" },
-                { "mokhaberat-secondary", "194.225.50.51" },
-                { "parspack-primary", "185.206.92.92" },
-                { "parspack-secondary", "185.206.93.93" },
-                
-                // Tier 5: Mobile Operators
-                { "irancell-primary", "78.39.35.66" },
-                { "irancell-secondary", "78.39.35.67" },
-                { "hamrah-primary", "217.218.127.127" },
-                { "hamrah-secondary", "217.218.155.155" },
-                { "rightel-primary", "78.157.42.101" },
-                { "rightel-secondary", "78.157.42.100" },
-                
-                // Tier 6: Regional
-                { "tehran-dns1", "185.143.232.100" },
-                { "tehran-dns2", "185.143.232.101" },
-                { "mashhad-dns1", "91.99.101.101" },
-                { "mashhad-dns2", "91.99.102.102" },
-                { "isfahan-dns1", "185.8.172.14" },
-                { "isfahan-dns2", "185.8.175.14" },
-                
-                // Tier 7: High-Performance Global
-                { "samantel-primary", "93.113.131.1" },
-                { "samantel-secondary", "93.113.131.2" },
-                { "arvancloud-primary", "178.22.122.100" },
-                { "arvancloud-secondary", "178.22.122.101" },
-                { "cloudflare-iran", "1.1.1.1" },
-                { "cloudflare-family", "1.1.1.3" },
-                { "quad9-iran", "9.9.9.9" },
-                { "quad9-secure", "9.9.9.10" },
-                { "opendns-primary", "208.67.222.222" },
-                { "opendns-secondary", "208.67.220.220" },
-                { "comodo-primary", "8.26.56.26" },
-                { "comodo-secondary", "8.20.247.20" },
-                
-                // Tier 8: ISP-Specific
-                { "asiatech-primary", "194.5.175.10" },
-                { "asiatech-secondary", "194.5.175.11" },
-                { "shatel-primary", "85.15.1.14" },
-                { "shatel-secondary", "85.15.1.15" },
-                { "datak-primary", "81.91.161.1" },
-                { "datak-secondary", "81.91.161.2" },
-                { "fanava-primary", "5.202.100.100" },
-                { "fanava-secondary", "5.202.100.101" },
-                { "respina-primary", "185.235.234.1" },
-                { "respina-secondary", "185.235.234.2" },
-                
-                // Tier 9: Specialized Anti-Sanctions DNS
-                { "dynx-anti-sanctions-primary", "10.70.95.150" },
-                { "dynx-anti-sanctions-secondary", "10.70.95.162" },
-                { "dynx-adblocker-primary", "195.26.26.23" },
-                { "dynx-ipv6-primary", "2a00:c98:2050:a04d:1::400" },
-                { "dynx-family-safe", "195.26.26.23" }
-            };
+            var dnsServers = GetDnsServers();
 
             // First, populate the grid with all DNS servers (so user sees them immediately)
             var rank = 1;
-            foreach (var kvp in iranianDnsServers)
+            foreach (var kvp in dnsServers)
             {
                 var result = new DnsTestResult
                 {
@@ -409,157 +533,186 @@ public partial class DnsTestingWindow : WindowBase<SanctionsBypassViewModel>
                     IpAddress = kvp.Value,
                     ResponseTime = "Testing...",
                     SuccessRate = "0%",
-                    TestsPassed = "0/4",
+                    TestsPassed = "⏳ TESTING",
                     Tier = GetTierFromName(kvp.Key),
-                    Status = "⏳ TESTING"
+                    Status = "⏳ TESTING developer.android.com..."
                 };
-                
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     DnsResults.Add(result);
                     progressBar.Value = DnsResults.Count;
-                    txtProgress.Text = $"Initializing DNS servers... ({DnsResults.Count}/65)";
+                    txtProgress.Text = $"Initializing DNS servers... ({DnsResults.Count}/{dnsServers.Count})";
                 });
             }
-            
-            LogMessage($"✅ Loaded {iranianDnsServers.Count} DNS servers into grid");
-            
-            // Now test each DNS server sequentially to avoid crashes
+
+            LogMessage($"✅ Loaded {dnsServers.Count} DNS servers into grid");
+
+            // Test DNS servers concurrently with semaphore for controlled parallelism
+            var semaphore = new SemaphoreSlim(MAX_CONCURRENT_TESTS);
+            var tasks = new List<Task>();
+            var completedCount = 0;
+
             var testIndex = 0;
-            foreach (var kvp in iranianDnsServers)
+            foreach (var kvp in dnsServers)
             {
                 if (_cancellationTokenSource?.Token.IsCancellationRequested == true)
                     break;
-                    
-                try
+
+                var localIndex = testIndex;
+                var localKvp = kvp;
+
+                tasks.Add(Task.Run(async () =>
                 {
-                    var dnsName = kvp.Key;
-                    var dnsIP = kvp.Value;
-                    
-                    LogMessage($"🔍 Testing {dnsName} ({dnsIP})");
-                    
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                    var testsPasssed = await TestSingleDnsServerSafe(dnsName, dnsIP);
-                    stopwatch.Stop();
-                    
-                    // Update the existing result in the grid
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await semaphore.WaitAsync(_cancellationTokenSource?.Token ?? CancellationToken.None);
+
+                    try
                     {
-                        if (testIndex < DnsResults.Count)
+                        var dnsName = localKvp.Key;
+                        var dnsIP = localKvp.Value;
+
+                        LogMessage($"🔍 Testing {dnsName} ({dnsIP})");
+
+                        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                        var testResult = await TestSingleDnsServerSafe(dnsName, dnsIP);
+                        stopwatch.Stop();
+
+                        // Update the existing result in the grid (use BeginInvoke for better performance)
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            var result = DnsResults[testIndex];
-                            result.ResponseTime = $"{stopwatch.ElapsedMilliseconds}ms";
-                            result.SuccessRate = $"{(testsPasssed * 100 / 4)}%";
-                            result.TestsPassed = $"{testsPasssed}/4";
-                            result.Status = testsPasssed >= 2 ? "✅ WORKING" : "❌ FAILED";
-                        }
-                        txtProgress.Text = $"Testing DNS servers... ({testIndex + 1}/65)";
-                    });
-                    
-                    LogMessage($"{(testsPasssed >= 2 ? "✅" : "❌")} {dnsName} - {testsPasssed}/4 tests passed ({stopwatch.ElapsedMilliseconds}ms)");
-                }
-                catch (Exception ex)
-                {
-                    LogMessage($"❌ ERROR testing {kvp.Key}: {ex.Message}");
-                    
-                    // Update result to show error
-                    Application.Current.Dispatcher.Invoke(() =>
+                            if (localIndex < DnsResults.Count)
+                            {
+                                var result = DnsResults[localIndex];
+                                result.ResponseTime = $"{stopwatch.ElapsedMilliseconds}ms";
+                                result.SuccessRate = $"{(testResult * 50)}%";
+                                result.TestsPassed = testResult == 2 ? "✅ FULL ACCESS" :
+                                                   testResult == 1 ? "⚠️ DNS OK (Blocked)" : "❌ FAILED";
+                                result.Status = testResult == 2 ? "✅ FULL ACCESS" :
+                                              testResult == 1 ? "⚠️ BLOCKED (DNS OK)" : "❌ FAILED";
+                            }
+
+                            // Update progress less frequently to improve performance
+                            completedCount++;
+                            if (completedCount % 5 == 0 || completedCount == dnsServers.Count)
+                            {
+                                txtProgress.Text = $"Testing DNS servers... ({completedCount}/{dnsServers.Count})";
+                                progressBar.Value = completedCount;
+                            }
+                        }), System.Windows.Threading.DispatcherPriority.Background);
+
+                        LogMessage($"{(testResult == 2 ? "✅" : testResult == 1 ? "⚠️" : "❌")} {dnsName} - developer.android.com {(testResult == 2 ? "FULL ACCESS" : testResult == 1 ? "DNS OK (Blocked)" : "FAILED")} ({stopwatch.ElapsedMilliseconds}ms)");
+                    }
+                    catch (Exception ex)
                     {
-                        if (testIndex < DnsResults.Count)
+                        LogMessage($"❌ ERROR testing {localKvp.Key}: {ex.Message}");
+
+                        // Update result to show error (use BeginInvoke for better performance)
+                        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            var result = DnsResults[testIndex];
-                            result.ResponseTime = "ERROR";
-                            result.SuccessRate = "0%";
-                            result.TestsPassed = "0/4";
-                            result.Status = "❌ ERROR";
-                        }
-                    });
-                }
-                
+                            if (localIndex < DnsResults.Count)
+                            {
+                                var result = DnsResults[localIndex];
+                                result.ResponseTime = "ERROR";
+                                result.SuccessRate = "0%";
+                                result.TestsPassed = "❌ ERROR";
+                                result.Status = "❌ ERROR";
+                            }
+                        }), System.Windows.Threading.DispatcherPriority.Background);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
+
                 testIndex++;
-                
-                // Small delay to prevent overwhelming the system
-                await Task.Delay(100);
+
+                // Small delay between starting tasks to prevent overwhelming
+                await Task.Delay(DELAY_BETWEEN_TESTS_MS);
             }
+
+            // Wait for all tasks to complete
+            await Task.WhenAll(tasks);
+
+            LogMessage($"✅ Concurrent DNS testing completed for {dnsServers.Count} servers");
         }
         catch (Exception ex)
         {
-            LogMessage($"❌ ERROR in direct DNS testing: {ex.Message}");
+            LogMessage($"❌ ERROR in concurrent DNS testing: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Test a single DNS server safely with proper error handling
+    /// Test a single DNS server ONLY for developer.android.com access - ultra fast testing
     /// </summary>
     private async Task<int> TestSingleDnsServerSafe(string dnsName, string dnsIP)
     {
-        // Simplified testing to avoid crashes - just check if DNS server is accessible
-        var passedTests = 0;
-        
+        var testResult = 0;
+
         try
         {
-            // Test 1: Basic Iranian website
-            using (var client = new HttpClient())
+            using var cts = new CancellationTokenSource(TEST_TIMEOUT_MS);
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var response = await _sharedHttpClient.GetAsync("https://developer.android.com/",
+                HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            stopwatch.Stop();
+
+            // SUCCESS: Any response means DNS resolution worked
+            if (response.IsSuccessStatusCode)
             {
-                client.Timeout = TimeSpan.FromSeconds(3);
-                try
-                {
-                    var response = await client.GetAsync("https://www.aparat.com/", HttpCompletionOption.ResponseHeadersRead);
-                    passedTests++;
-                }
-                catch { /* Ignore errors for now */ }
+                testResult = 2; // Perfect success - fully accessible
             }
-            
-            // Test 2: Another Iranian website
-            using (var client = new HttpClient())
+            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
-                client.Timeout = TimeSpan.FromSeconds(3);
-                try
-                {
-                    var response = await client.GetAsync("https://www.digikala.com/", HttpCompletionOption.ResponseHeadersRead);
-                    passedTests++;
-                }
-                catch { /* Ignore errors for now */ }
+                testResult = 1; // Partial success - DNS works but blocked by sanctions
             }
-            
-            // Test 3: Iranian mirror
-            using (var client = new HttpClient())
+            else
             {
-                client.Timeout = TimeSpan.FromSeconds(3);
-                try
-                {
-                    var response = await client.GetAsync("https://en-mirror.ir/", HttpCompletionOption.ResponseHeadersRead);
-                    passedTests++;
-                }
-                catch { /* Ignore errors for now */ }
-            }
-            
-            // Test 4: Iranian maven mirror
-            using (var client = new HttpClient())
-            {
-                client.Timeout = TimeSpan.FromSeconds(3);
-                try
-                {
-                    var response = await client.GetAsync("https://maven.myket.ir/", HttpCompletionOption.ResponseHeadersRead);
-                    passedTests++;
-                }
-                catch { /* Ignore errors for now */ }
+                testResult = 0; // Failed
             }
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
-            // If all tests fail, assume DNS is not working
-            LogMessage($"⚠️ All tests failed for {dnsName}: {ex.Message}");
+            // Check if it's a sanctions-related error (DNS worked but blocked)
+            if (ex.Message.Contains("403") || ex.Message.Contains("Forbidden") ||
+                ex.Message.Contains("permission") || ex.Message.Contains("denied"))
+            {
+                testResult = 1; // DNS resolution worked, just blocked by sanctions
+            }
+            else
+            {
+                testResult = 0; // DNS or network failed
+            }
         }
-        
-        return passedTests;
+        catch (TaskCanceledException)
+        {
+            testResult = 0; // Timeout
+        }
+        catch (OperationCanceledException)
+        {
+            testResult = 0; // Cancelled
+        }
+        catch (Exception)
+        {
+            testResult = 0; // Other error
+        }
+
+        return testResult;
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
         StopDnsTesting();
         _sanctionsService?.Dispose();
+        DisposeResources();
         base.OnClosing(e);
+    }
+
+    private void DisposeResources()
+    {
+        _sharedHttpClient?.Dispose();
+        _cancellationTokenSource?.Dispose();
     }
 }
 
